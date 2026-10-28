@@ -9,7 +9,8 @@
     "./money": "./src/money/index.ts",
     "./dates": "./src/dates/index.ts",
     "./schemas": "./src/schemas/index.ts",
-    "./categories": "./src/categories/index.ts"
+    "./categories": "./src/categories/index.ts",
+    "./ids": "./src/ids.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

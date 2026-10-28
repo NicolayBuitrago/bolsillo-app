@@ -8,20 +8,23 @@ import {
   paginationQuerySchema,
 } from './common';
 
-export const transactionTypeSchema = z.enum(['expense', 'income', 'transfer_out', 'transfer_in']);
+export const TRANSACTION_TYPES = ['expense', 'income', 'transfer_out', 'transfer_in'] as const;
+export const transactionTypeSchema = z.enum(TRANSACTION_TYPES);
 export type TransactionType = z.infer<typeof transactionTypeSchema>;
 
-export const transactionStatusSchema = z.enum(['pending', 'confirmed']);
+export const TRANSACTION_STATUSES = ['pending', 'confirmed'] as const;
+export const transactionStatusSchema = z.enum(TRANSACTION_STATUSES);
 export type TransactionStatus = z.infer<typeof transactionStatusSchema>;
 
-export const transactionSourceSchema = z.enum([
+export const TRANSACTION_SOURCES = [
   'manual',
   'notification',
   'email',
   'shortcut',
   'recurring',
   'import',
-]);
+] as const;
+export const transactionSourceSchema = z.enum(TRANSACTION_SOURCES);
 export type TransactionSource = z.infer<typeof transactionSourceSchema>;
 
 /** Types a user can create directly; transfers go through `/v1/transfers`. */

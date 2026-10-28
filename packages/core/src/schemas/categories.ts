@@ -2,7 +2,8 @@ import { z } from 'zod';
 import { colorSchema, iconKeySchema } from '../categories/icons';
 import { isoDateTimeSchema, queryBooleanSchema, requiredText } from './common';
 
-export const categoryKindSchema = z.enum(['expense', 'income']);
+export const CATEGORY_KINDS = ['expense', 'income'] as const;
+export const categoryKindSchema = z.enum(CATEGORY_KINDS);
 export type CategoryKind = z.infer<typeof categoryKindSchema>;
 
 export const categorySchema = z.object({

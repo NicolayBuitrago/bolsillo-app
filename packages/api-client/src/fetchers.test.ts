@@ -1,11 +1,17 @@
 import type {
   Account,
+  Budget,
+  BudgetSummary,
   CategoryTreeNode,
   MonthlyReport,
   Page,
+  RecurringPayment,
+  RecurringPaymentResult,
   Settings,
   Transaction,
   Transfer,
+  TrendReport,
+  UpcomingPayment,
 } from '@bolsillo/core/schemas';
 import { QueryClient } from '@tanstack/react-query';
 import type { InferResponseType } from 'hono/client';
@@ -140,5 +146,33 @@ describe('response types', () => {
     expectTypeOf<
       InferResponseType<V1['reports']['monthly']['$get'], 200>
     >().toEqualTypeOf<MonthlyReport>();
+    expectTypeOf<
+      InferResponseType<V1['reports']['trend']['$get'], 200>
+    >().toEqualTypeOf<TrendReport>();
+    expectTypeOf<InferResponseType<V1['budgets']['$get'], 200>>().toEqualTypeOf<Budget[]>();
+    expectTypeOf<
+      InferResponseType<V1['budgets']['summary']['$get'], 200>
+    >().toEqualTypeOf<BudgetSummary>();
+    expectTypeOf<InferResponseType<V1['recurring']['$get'], 200>>().toEqualTypeOf<
+      RecurringPayment[]
+    >();
+    expectTypeOf<InferResponseType<V1['recurring']['upcoming']['$get'], 200>>().toEqualTypeOf<
+      UpcomingPayment[]
+    >();
+    expectTypeOf<
+      InferResponseType<V1['recurring'][':id']['pay']['$post'], 200>
+    >().toEqualTypeOf<RecurringPaymentResult>();
+  });
+});
+
+describe('fetchTransactionsCsv', () => {
+  it('returns the CSV text and sends the date range', async () => {
+    const csv = `${String.fromCharCode(0xfeff)}Fecha;Tipo\r\n`;
+    const fetch = vi.fn(async (..._args: Call) => new Response(csv));
+    const client = createApiClient('http://api.test', { fetch });
+    await expect(api.fetchTransactionsCsv(client, { from: '2026-10-01' })).resolves.toBe(csv);
+    const url = new URL(String(fetch.mock.calls[0]?.[0]));
+    expect(url.pathname).toBe('/v1/export/transactions.csv');
+    expect(url.searchParams.get('from')).toBe('2026-10-01');
   });
 });

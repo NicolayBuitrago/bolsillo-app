@@ -25,5 +25,16 @@ export const queryKeys = {
   reports: {
     all: ['reports'] as const,
     monthly: (month: string) => ['reports', 'monthly', month] as const,
+    trend: (months: number) => ['reports', 'trend', months] as const,
+  },
+  budgets: {
+    all: ['budgets'] as const,
+    list: (includeArchived: boolean) => ['budgets', 'list', { includeArchived }] as const,
+    summary: (month: string) => ['budgets', 'summary', month] as const,
+  },
+  recurring: {
+    all: ['recurring'] as const,
+    list: () => ['recurring', 'list'] as const,
+    upcoming: (days: number) => ['recurring', 'upcoming', days] as const,
   },
 };

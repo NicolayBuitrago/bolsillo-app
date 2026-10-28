@@ -1,11 +1,16 @@
 import type {
   AdjustBalanceInput,
   CreateAccountInput,
+  CreateBudgetInput,
   CreateCategoryInput,
+  CreateRecurringPaymentInput,
   CreateTransactionInput,
   CreateTransferInput,
+  PayRecurringPaymentInput,
   UpdateAccountInput,
+  UpdateBudgetInput,
   UpdateCategoryInput,
+  UpdateRecurringPaymentInput,
   UpdateSettingsInput,
   UpdateTransactionInput,
 } from '@bolsillo/core/schemas';
@@ -24,12 +29,13 @@ import { queryKeys, type TransactionFilters } from './keys';
 
 const TRANSACTIONS_PAGE_SIZE = 50;
 
-/** After any money movement: lists, balances and reports change. */
+/** After any money movement: lists, balances, reports and budget progress change. */
 export function invalidateMoney(queryClient: QueryClient) {
   return Promise.all([
     queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
     queryClient.invalidateQueries({ queryKey: queryKeys.reports.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.budgets.all }),
   ]);
 }
 
@@ -218,4 +224,111 @@ export function useCreateTransfer() {
 export function useMonthlyReport(month: string | null) {
   const client = useApiClient();
   return useQuery({ ...monthlyReportQuery(client, month ?? ''), enabled: month !== null });
+}
+
+export function useTrend(months = 6) {
+  const client = useApiClient();
+  return useQuery({
+    queryKey: queryKeys.reports.trend(months),
+    queryFn: () => api.fetchTrend(client, months),
+  });
+}
+
+export function useBudgets(options: { includeArchived?: boolean } = {}) {
+  const client = useApiClient();
+  const includeArchived = options.includeArchived ?? false;
+  return useQuery({
+    queryKey: queryKeys.budgets.list(includeArchived),
+    queryFn: () => api.fetchBudgets(client, includeArchived),
+  });
+}
+
+/** `null` while the month is unknown. */
+export function useBudgetSummary(month: string | null) {
+  const client = useApiClient();
+  return useQuery({
+    queryKey: queryKeys.budgets.summary(month ?? ''),
+    queryFn: () => api.fetchBudgetSummary(client, month ?? ''),
+    enabled: month !== null,
+  });
+}
+
+function useBudgetMutation<Input>(mutate: (client: ApiClient, input: Input) => Promise<unknown>) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Input) => mutate(client, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.budgets.all }),
+  });
+}
+
+export function useCreateBudget() {
+  return useBudgetMutation((client, input: CreateBudgetInput) => api.createBudget(client, input));
+}
+
+export function useUpdateBudget() {
+  return useBudgetMutation((client, { id, input }: { id: string; input: UpdateBudgetInput }) =>
+    api.updateBudget(client, id, input),
+  );
+}
+
+export function useArchiveBudget() {
+  return useBudgetMutation((client, id: string) => api.archiveBudget(client, id));
+}
+
+export function useRecurringPayments() {
+  const client = useApiClient();
+  return useQuery({
+    queryKey: queryKeys.recurring.list(),
+    queryFn: () => api.fetchRecurring(client),
+  });
+}
+
+export const upcomingQuery = (client: ApiClient, days: number) =>
+  queryOptions({
+    queryKey: queryKeys.recurring.upcoming(days),
+    queryFn: () => api.fetchUpcoming(client, days),
+  });
+
+export function useUpcomingPayments(days = 30) {
+  return useQuery(upcomingQuery(useApiClient(), days));
+}
+
+function useRecurringMutation<Input>(
+  mutate: (client: ApiClient, input: Input) => Promise<unknown>,
+) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Input) => mutate(client, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.recurring.all }),
+  });
+}
+
+export function useCreateRecurring() {
+  return useRecurringMutation((client, input: CreateRecurringPaymentInput) =>
+    api.createRecurring(client, input),
+  );
+}
+
+export function useUpdateRecurring() {
+  return useRecurringMutation(
+    (client, { id, input }: { id: string; input: UpdateRecurringPaymentInput }) =>
+      api.updateRecurring(client, id, input),
+  );
+}
+
+/** Paying creates or confirms a transaction: money queries change too. */
+export function usePayRecurring() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: PayRecurringPaymentInput }) =>
+      api.payRecurring(client, id, input),
+    onSuccess: () =>
+      Promise.all([
+        invalidateMoney(queryClient),
+        queryClient.invalidateQueries({ queryKey: queryKeys.recurring.all }),
+      ]),
+  });
 }

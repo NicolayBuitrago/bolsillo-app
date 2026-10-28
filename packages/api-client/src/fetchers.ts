@@ -1,19 +1,30 @@
 import type {
   Account,
   AdjustBalanceInput,
+  Budget,
+  BudgetSummary,
   Category,
   CategoryTreeNode,
   CreateAccountInput,
+  CreateBudgetInput,
   CreateCategoryInput,
+  CreateRecurringPaymentInput,
   CreateTransactionInput,
   CreateTransferInput,
   MonthlyReport,
   Page,
+  PayRecurringPaymentInput,
+  RecurringPayment,
+  RecurringPaymentResult,
   Settings,
   Transaction,
   Transfer,
+  TrendReport,
+  UpcomingPayment,
   UpdateAccountInput,
+  UpdateBudgetInput,
   UpdateCategoryInput,
+  UpdateRecurringPaymentInput,
   UpdateSettingsInput,
   UpdateTransactionInput,
 } from '@bolsillo/core/schemas';
@@ -26,6 +37,12 @@ async function ok<T>(promise: Promise<ResponseLike>): Promise<T> {
   const res = await promise;
   if (!res.ok) throw await toApiError(res);
   return (await res.json()) as T;
+}
+
+async function text(promise: Promise<ResponseLike & { text(): Promise<string> }>): Promise<string> {
+  const res = await promise;
+  if (!res.ok) throw await toApiError(res);
+  return res.text();
 }
 
 async function noContent(promise: Promise<ResponseLike>): Promise<void> {
@@ -109,3 +126,53 @@ export const createTransfer = (client: ApiClient, json: CreateTransferInput) =>
 
 export const fetchMonthlyReport = (client: ApiClient, month: string) =>
   ok<MonthlyReport>(client.v1.reports.monthly.$get({ query: { month } }));
+
+export const fetchTrend = (client: ApiClient, months: number) =>
+  ok<TrendReport>(client.v1.reports.trend.$get({ query: { months: String(months) } }));
+
+export const fetchBudgets = (client: ApiClient, includeArchived = false) =>
+  ok<Budget[]>(
+    client.v1.budgets.$get({ query: includeArchived ? { includeArchived: 'true' } : {} }),
+  );
+
+export const fetchBudgetSummary = (client: ApiClient, month: string) =>
+  ok<BudgetSummary>(client.v1.budgets.summary.$get({ query: { month } }));
+
+export const createBudget = (client: ApiClient, json: CreateBudgetInput) =>
+  ok<Budget>(client.v1.budgets.$post({ json }));
+
+export const updateBudget = (client: ApiClient, id: string, json: UpdateBudgetInput) =>
+  ok<Budget>(client.v1.budgets[':id'].$patch({ param: { id }, json }));
+
+export const archiveBudget = (client: ApiClient, id: string) =>
+  ok<Budget>(client.v1.budgets[':id'].archive.$post({ param: { id } }));
+
+export const fetchRecurring = (client: ApiClient) =>
+  ok<RecurringPayment[]>(client.v1.recurring.$get());
+
+export const fetchUpcoming = (client: ApiClient, days: number) =>
+  ok<UpcomingPayment[]>(client.v1.recurring.upcoming.$get({ query: { days: String(days) } }));
+
+export const createRecurring = (client: ApiClient, json: CreateRecurringPaymentInput) =>
+  ok<RecurringPayment>(client.v1.recurring.$post({ json }));
+
+export const updateRecurring = (client: ApiClient, id: string, json: UpdateRecurringPaymentInput) =>
+  ok<RecurringPayment>(client.v1.recurring[':id'].$patch({ param: { id }, json }));
+
+export const payRecurring = (client: ApiClient, id: string, json: PayRecurringPaymentInput) =>
+  ok<RecurringPaymentResult>(client.v1.recurring[':id'].pay.$post({ param: { id }, json }));
+
+const BOM = String.fromCharCode(0xfeff);
+
+/**
+ * CSV text (UTF-8 with BOM). Web links straight to the file; mobile saves this
+ * text. `Response.text()` drops the BOM while decoding, and Excel needs it to
+ * read tildes, so it is put back.
+ */
+export const fetchTransactionsCsv = async (
+  client: ApiClient,
+  query: { from?: string; to?: string } = {},
+) => {
+  const csv = await text(client.v1.export['transactions.csv'].$get({ query }));
+  return csv.startsWith(BOM) ? csv : `${BOM}${csv}`;
+};

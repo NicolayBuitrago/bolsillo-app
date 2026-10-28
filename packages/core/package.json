@@ -1,0 +1,27 @@
+{
+  "name": "@bolsillo/core",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./money": "./src/money/index.ts",
+    "./dates": "./src/dates/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --coverage"
+  },
+  "dependencies": {
+    "@date-fns/tz": "1.5.0",
+    "date-fns": "4.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@bolsillo/config": "workspace:*",
+    "@vitest/coverage-v8": "5.0.5",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

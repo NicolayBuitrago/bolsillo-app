@@ -1,11 +1,20 @@
 import { endOfDayInZone, startOfDayInZone, toDateKey } from '@bolsillo/core/dates';
 import { newId } from '@bolsillo/core/ids';
 import { toMinor } from '@bolsillo/core/money';
+import { addDays, nextDueAfter } from '@bolsillo/core/recurring';
 import { hashPassword } from 'better-auth/crypto';
 import { eq } from 'drizzle-orm';
 import type { Database } from './client';
 import { ensureUserDefaults } from './defaults';
-import { account, categories, financialAccounts, transactions, user } from './schema';
+import {
+  account,
+  budgets,
+  categories,
+  financialAccounts,
+  recurringPayments,
+  transactions,
+  user,
+} from './schema';
 
 export const DEMO_EMAIL = 'demo@bolsillo.local';
 const TIME_ZONE = 'America/Bogota';
@@ -23,6 +32,8 @@ export interface SeedResult {
   accounts: number;
   transactions: number;
   transfers: number;
+  budgets: number;
+  recurringPayments: number;
 }
 
 type TransactionValues = typeof transactions.$inferInsert;
@@ -305,10 +316,76 @@ export async function seed(db: Database, options: SeedOptions): Promise<SeedResu
     }
   });
 
+  // Budgets from the first seeded month; recurring payments anchored then too.
+  const firstMonthStart = `${toDateKey(at(DAYS, 12), TIME_ZONE).slice(0, 7)}-01`;
+  const budgetRows = await db
+    .insert(budgets)
+    .values([
+      {
+        userId: demo.id,
+        categoryId: categoryId('Alimentación'),
+        amountMinor: cop(1_500_000),
+        currency: 'COP',
+        startsOn: firstMonthStart,
+      },
+      {
+        userId: demo.id,
+        categoryId: categoryId('Transporte'),
+        amountMinor: cop(450_000),
+        currency: 'COP',
+        startsOn: firstMonthStart,
+      },
+    ])
+    .returning();
+
+  const recurring = (day: number) => {
+    const anchorOn = `${firstMonthStart.slice(0, 8)}${String(day).padStart(2, '0')}`;
+    return { anchorOn, nextDueOn: nextDueAfter(anchorOn, 'monthly', addDays(today, -1)) };
+  };
+  const recurringRows = await db
+    .insert(recurringPayments)
+    .values([
+      {
+        userId: demo.id,
+        name: 'Arriendo',
+        accountId: bank.id,
+        categoryId: categoryId('Arriendo'),
+        amountMinor: cop(1_800_000),
+        currency: 'COP',
+        frequency: 'monthly',
+        autoCreate: true,
+        remindDaysBefore: 3,
+        ...recurring(5),
+      },
+      {
+        userId: demo.id,
+        name: 'Netflix',
+        accountId: card.id,
+        categoryId: categoryId('Suscripciones'),
+        amountMinor: cop(38_900),
+        currency: 'COP',
+        frequency: 'monthly',
+        ...recurring(15),
+      },
+      {
+        userId: demo.id,
+        name: 'Energía',
+        accountId: bank.id,
+        categoryId: categoryId('Energía'),
+        amountMinor: null,
+        currency: 'COP',
+        frequency: 'monthly',
+        ...recurring(10),
+      },
+    ])
+    .returning();
+
   return {
     email: DEMO_EMAIL,
     accounts: accountRows.length,
     transactions: rows.length,
     transfers,
+    budgets: budgetRows.length,
+    recurringPayments: recurringRows.length,
   };
 }

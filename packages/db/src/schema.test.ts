@@ -3,7 +3,15 @@ import { newId } from '@bolsillo/core/ids';
 import { and, eq, isNull } from 'drizzle-orm';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ensureUserDefaults } from './defaults';
-import { categories, financialAccounts, transactions, user, userSettings } from './schema';
+import {
+  budgets,
+  categories,
+  financialAccounts,
+  recurringPayments,
+  transactions,
+  user,
+  userSettings,
+} from './schema';
 import { createTemporaryDatabase, type TemporaryDatabase } from './testing';
 
 let tmp: TemporaryDatabase;
@@ -171,6 +179,54 @@ describe('constraints', () => {
       .set({ archivedAt: new Date() })
       .where(eq(financialAccounts.id, first));
     await expect(createAccount(userId, 'Ahorros')).resolves.toBeTypeOf('string');
+  });
+
+  it('enforces recurring payment and budget rules', async () => {
+    const userId = await createUser('recurring@test.local');
+    const other = await createUser('recurring-other@test.local');
+    await ensureUserDefaults(tmp.db, other);
+    const [otherCategory] = await tmp.db
+      .select()
+      .from(categories)
+      .where(eq(categories.userId, other));
+    const base = {
+      userId,
+      name: 'Arriendo',
+      currency: 'COP' as const,
+      frequency: 'monthly' as const,
+      anchorOn: '2026-10-31',
+      nextDueOn: '2026-10-31',
+    };
+    expect(
+      await constraintOf(tmp.db.insert(recurringPayments).values({ ...base, autoCreate: true })),
+    ).toBe('recurring_payments_auto_create_check');
+    expect(
+      await constraintOf(
+        tmp.db.insert(budgets).values({
+          userId,
+          categoryId: otherCategory?.id ?? '',
+          amountMinor: 100,
+          currency: 'COP',
+          startsOn: '2026-10-01',
+        }),
+      ),
+    ).toBe('budgets_category_fk');
+
+    const [payment] = await tmp.db
+      .insert(recurringPayments)
+      .values({ ...base, amountMinor: 100, autoCreate: true })
+      .returning();
+    const accountId = await createAccount(userId, 'Banco recurrente');
+    const pending = {
+      ...expense(userId, accountId),
+      status: 'pending' as const,
+      occurredAt: new Date('2026-10-31T17:00:00Z'),
+      recurringPaymentId: payment?.id ?? null,
+    };
+    await tmp.db.insert(transactions).values(pending);
+    expect(
+      await constraintOf(tmp.db.insert(transactions).values({ ...pending, id: newId() })),
+    ).toBe('transactions_recurring_occurrence_key');
   });
 
   it('deletes all user data when the user is deleted', async () => {

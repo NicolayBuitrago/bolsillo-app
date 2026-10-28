@@ -14,7 +14,8 @@ try {
   const result = await seed(handle.db, { password });
   process.stdout.write(
     `Seed finished: ${result.email} with ${result.accounts} accounts, ` +
-      `${result.transactions} transactions (${result.transfers} transfers).\n`,
+      `${result.transactions} transactions (${result.transfers} transfers), ` +
+      `${result.budgets} budgets and ${result.recurringPayments} recurring payments.\n`,
   );
 } finally {
   await handle.close();

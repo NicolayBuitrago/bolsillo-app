@@ -30,7 +30,12 @@ describe('database', () => {
   it('runs the seed and can run it again', async () => {
     const now = new Date('2026-10-28T20:00:00Z');
     const first = await seed(tmp.db, { password: 'demo-password', now });
-    expect(first).toMatchObject({ email: DEMO_EMAIL, accounts: 4 });
+    expect(first).toMatchObject({
+      email: DEMO_EMAIL,
+      accounts: 4,
+      budgets: 2,
+      recurringPayments: 3,
+    });
     expect(first.transactions).toBeGreaterThan(120);
     expect(first.transfers).toBeGreaterThan(10);
 

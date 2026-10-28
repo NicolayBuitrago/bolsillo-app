@@ -1,0 +1,219 @@
+import type {
+  AdjustBalanceInput,
+  CreateAccountInput,
+  CreateCategoryInput,
+  CreateTransactionInput,
+  CreateTransferInput,
+  UpdateAccountInput,
+  UpdateCategoryInput,
+  UpdateSettingsInput,
+  UpdateTransactionInput,
+} from '@bolsillo/core/schemas';
+import {
+  type QueryClient,
+  queryOptions,
+  useInfiniteQuery,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import type { ApiClient } from './client';
+import { useApiClient } from './context';
+import * as api from './fetchers';
+import { queryKeys, type TransactionFilters } from './keys';
+
+const TRANSACTIONS_PAGE_SIZE = 50;
+
+/** After any money movement: lists, balances and reports change. */
+export function invalidateMoney(queryClient: QueryClient) {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: queryKeys.transactions.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+    queryClient.invalidateQueries({ queryKey: queryKeys.reports.all }),
+  ]);
+}
+
+// --- Query options (also usable for prefetching) -----------------------------
+
+export const settingsQuery = (client: ApiClient) =>
+  queryOptions({ queryKey: queryKeys.settings.all, queryFn: () => api.fetchSettings(client) });
+
+export const accountsQuery = (client: ApiClient, includeArchived = false) =>
+  queryOptions({
+    queryKey: queryKeys.accounts.list(includeArchived),
+    queryFn: () => api.fetchAccounts(client, includeArchived),
+  });
+
+export const categoriesQuery = (client: ApiClient, includeArchived = false) =>
+  queryOptions({
+    queryKey: queryKeys.categories.tree(includeArchived),
+    queryFn: () => api.fetchCategories(client, includeArchived),
+    staleTime: 5 * 60_000,
+  });
+
+export const transactionQuery = (client: ApiClient, id: string) =>
+  queryOptions({
+    queryKey: queryKeys.transactions.detail(id),
+    queryFn: () => api.fetchTransaction(client, id),
+  });
+
+export const monthlyReportQuery = (client: ApiClient, month: string) =>
+  queryOptions({
+    queryKey: queryKeys.reports.monthly(month),
+    queryFn: () => api.fetchMonthlyReport(client, month),
+  });
+
+// --- Hooks --------------------------------------------------------------------
+
+export function useSettings() {
+  return useQuery(settingsQuery(useApiClient()));
+}
+
+export function useUpdateSettings() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: UpdateSettingsInput) => api.updateSettings(client, input),
+    onSuccess: (settings) => {
+      queryClient.setQueryData(queryKeys.settings.all, settings);
+      // The time zone changes month boundaries.
+      return queryClient.invalidateQueries({ queryKey: queryKeys.reports.all });
+    },
+  });
+}
+
+export function useAccounts(options: { includeArchived?: boolean } = {}) {
+  return useQuery(accountsQuery(useApiClient(), options.includeArchived ?? false));
+}
+
+export function useCreateAccount() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateAccountInput) => api.createAccount(client, input),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+  });
+}
+
+export function useUpdateAccount() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateAccountInput }) =>
+      api.updateAccount(client, id, input),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.reports.all }),
+      ]),
+  });
+}
+
+export function useArchiveAccount() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.archiveAccount(client, id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: queryKeys.accounts.all }),
+  });
+}
+
+export function useAdjustBalance() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: AdjustBalanceInput }) =>
+      api.adjustAccountBalance(client, id, input),
+    onSuccess: () => invalidateMoney(queryClient),
+  });
+}
+
+export function useCategories(options: { includeArchived?: boolean } = {}) {
+  return useQuery(categoriesQuery(useApiClient(), options.includeArchived ?? false));
+}
+
+function useCategoryMutation<Input>(mutate: (client: ApiClient, input: Input) => Promise<unknown>) {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: Input) => mutate(client, input),
+    onSuccess: () =>
+      Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.categories.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.reports.all }),
+      ]),
+  });
+}
+
+export function useCreateCategory() {
+  return useCategoryMutation((client, input: CreateCategoryInput) =>
+    api.createCategory(client, input),
+  );
+}
+
+export function useUpdateCategory() {
+  return useCategoryMutation((client, { id, input }: { id: string; input: UpdateCategoryInput }) =>
+    api.updateCategory(client, id, input),
+  );
+}
+
+export function useArchiveCategory() {
+  return useCategoryMutation((client, id: string) => api.archiveCategory(client, id));
+}
+
+/** Paged transaction list (newest first). `fetchNextPage` follows the cursor. */
+export function useTransactions(filters: TransactionFilters = {}) {
+  const client = useApiClient();
+  return useInfiniteQuery({
+    queryKey: queryKeys.transactions.list(filters),
+    queryFn: ({ pageParam }) =>
+      api.fetchTransactions(client, filters, { cursor: pageParam, limit: TRANSACTIONS_PAGE_SIZE }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (page) => page.nextCursor ?? undefined,
+  });
+}
+
+export function useTransaction(id: string) {
+  return useQuery(transactionQuery(useApiClient(), id));
+}
+
+export function useCreateTransaction() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateTransactionInput) => api.createTransaction(client, input),
+    onSuccess: () => invalidateMoney(queryClient),
+  });
+}
+
+export function useUpdateTransaction() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: UpdateTransactionInput }) =>
+      api.updateTransaction(client, id, input),
+    onSuccess: () => invalidateMoney(queryClient),
+  });
+}
+
+export function useDeleteTransaction() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.deleteTransaction(client, id),
+    onSuccess: () => invalidateMoney(queryClient),
+  });
+}
+
+export function useCreateTransfer() {
+  const client = useApiClient();
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (input: CreateTransferInput) => api.createTransfer(client, input),
+    onSuccess: () => invalidateMoney(queryClient),
+  });
+}
+
+export function useMonthlyReport(month: string) {
+  return useQuery(monthlyReportQuery(useApiClient(), month));
+}

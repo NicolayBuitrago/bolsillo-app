@@ -15,6 +15,7 @@
     "react": "^19.0.0"
   },
   "dependencies": {
+    "@bolsillo/core": "workspace:*",
     "@tanstack/react-query": "5.105.0",
     "hono": "4.13.14"
   },

@@ -3,6 +3,7 @@ import {
   endOfMonthInZone,
   getMonthRange,
   monthKeySchema,
+  shiftMonthKey,
   startOfMonthInZone,
   toMonthKey,
 } from './month';
@@ -68,6 +69,16 @@ describe('month boundaries in other zones', () => {
       end: utc('2026-02-01T00:00:00Z'),
     });
     expect(toMonthKey(utc('2026-01-31T23:59:59Z'), 'UTC')).toBe('2026-01');
+  });
+});
+
+describe('shiftMonthKey', () => {
+  it('moves across years in both directions', () => {
+    expect(shiftMonthKey('2026-10', 1)).toBe('2026-11');
+    expect(shiftMonthKey('2026-12', 1)).toBe('2027-01');
+    expect(shiftMonthKey('2026-01', -1)).toBe('2025-12');
+    expect(shiftMonthKey('2026-10', -22)).toBe('2024-12');
+    expect(() => shiftMonthKey('2026-13', 1)).toThrow(RangeError);
   });
 });
 

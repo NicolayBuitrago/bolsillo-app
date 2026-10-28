@@ -58,3 +58,16 @@ function monthKeyToInstant(month: MonthKey, timeZone: string): Date {
   const [year, monthNumber] = parsed.data.split('-').map(Number) as [number, number];
   return new Date(new TZDate(year, monthNumber - 1, 1, timeZone).getTime());
 }
+
+/** Moves a `YYYY-MM` key by `delta` months (negative goes back). */
+export function shiftMonthKey(month: MonthKey, delta: number): MonthKey {
+  const parsed = monthKeySchema.safeParse(month);
+  if (!parsed.success || !Number.isInteger(delta)) {
+    throw new RangeError(`Invalid month shift: ${month} ${delta}`);
+  }
+  const [year, monthNumber] = parsed.data.split('-').map(Number) as [number, number];
+  const index = year * 12 + (monthNumber - 1) + delta;
+  const nextYear = Math.floor(index / 12);
+  const nextMonth = String((index % 12) + 1).padStart(2, '0');
+  return `${nextYear}-${nextMonth}`;
+}

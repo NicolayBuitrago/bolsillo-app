@@ -2,7 +2,9 @@ import { describe, expect, it } from 'vitest';
 import { currencyCodeSchema, getExponent, isCurrencyCode } from './currencies';
 import { MoneyError } from './errors';
 import { formatAmount } from './format';
+import { toAmountInput } from './input';
 import { amountMinorSchema, fromMinor, positiveAmountMinorSchema, toMinor } from './minor';
+import { parseAmount } from './parse';
 import { addMoney, sumByCurrency, sumMinor } from './sum';
 
 describe('currencies', () => {
@@ -148,5 +150,17 @@ describe('sums', () => {
       ]),
     ).toEqual({ COP: 1000, USD: 1250 });
     expect(sumByCurrency([])).toEqual({});
+  });
+});
+
+describe('toAmountInput', () => {
+  it('produces text that parseAmount reads back', () => {
+    for (const minor of [4_590_000, 4_590_050, 5, 100, 0]) {
+      const text = toAmountInput(minor, 'COP');
+      expect(parseAmount(text, { defaultCurrency: 'COP' }).amountMinor).toBe(minor);
+    }
+    expect(toAmountInput(4_590_000, 'COP')).toBe('45900');
+    expect(toAmountInput(4_590_050, 'COP')).toBe('45900,50');
+    expect(toAmountInput(-1_500, 'USD')).toBe('15');
   });
 });

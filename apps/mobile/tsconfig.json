@@ -1,0 +1,11 @@
+{
+  "extends": ["expo/tsconfig.base", "@bolsillo/config/tsconfig/expo.json"],
+  "compilerOptions": {
+    "types": ["node", "jest"],
+    "paths": {
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["**/*.ts", "**/*.tsx", ".expo/types/**/*.ts", "expo-env.d.ts", "nativewind-env.d.ts"],
+  "exclude": ["node_modules", "android", "ios"]
+}

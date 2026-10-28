@@ -36,3 +36,33 @@ export function toDateKey(instant: Date, timeZone: string = DEFAULT_TIME_ZONE): 
   const day = String(local.getDate()).padStart(2, '0');
   return `${local.getFullYear()}-${month}-${day}`;
 }
+
+const LOCAL_DATE_TIME = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/;
+
+/** `YYYY-MM-DDTHH:mm` of `instant` in `timeZone` (value of `<input type="datetime-local">`). */
+export function toLocalDateTime(instant: Date, timeZone: string = DEFAULT_TIME_ZONE): string {
+  const local = new TZDate(instant.getTime(), timeZone);
+  const hours = String(local.getHours()).padStart(2, '0');
+  const minutes = String(local.getMinutes()).padStart(2, '0');
+  return `${toDateKey(instant, timeZone)}T${hours}:${minutes}`;
+}
+
+/** Instant for a local `YYYY-MM-DDTHH:mm` wall-clock time in `timeZone`. */
+export function fromLocalDateTime(value: string, timeZone: string = DEFAULT_TIME_ZONE): Date {
+  const match = LOCAL_DATE_TIME.exec(value);
+  if (!match) {
+    throw new RangeError(`Invalid local date-time: ${value}`);
+  }
+  const start = startOfDayInZone(`${match[1]}-${match[2]}-${match[3]}`, timeZone);
+  const local = new TZDate(start.getTime(), timeZone);
+  return new Date(
+    new TZDate(
+      local.getFullYear(),
+      local.getMonth(),
+      local.getDate(),
+      Number(match[4]),
+      Number(match[5]),
+      timeZone,
+    ).getTime(),
+  );
+}

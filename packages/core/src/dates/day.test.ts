@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { endOfDayInZone, startOfDayInZone, toDateKey } from './day';
+import {
+  endOfDayInZone,
+  fromLocalDateTime,
+  startOfDayInZone,
+  toDateKey,
+  toLocalDateTime,
+} from './day';
 import { formatDayHeading, formatMonth, formatTime } from './format';
 
 const utc = (iso: string) => new Date(iso);
@@ -29,6 +35,20 @@ describe('day boundaries', () => {
     expect(toDateKey(utc('2026-10-29T04:59:59Z'))).toBe('2026-10-28');
     expect(toDateKey(utc('2026-10-29T05:00:00Z'))).toBe('2026-10-29');
     expect(toDateKey(utc('2026-10-29T04:59:59Z'), 'UTC')).toBe('2026-10-29');
+  });
+});
+
+describe('datetime-local values', () => {
+  it('round-trips wall-clock times in the user zone', () => {
+    const instant = utc('2026-10-28T20:05:00Z');
+    expect(toLocalDateTime(instant)).toBe('2026-10-28T15:05');
+    expect(fromLocalDateTime('2026-10-28T15:05')).toEqual(instant);
+    expect(fromLocalDateTime('2026-10-28T23:30', 'UTC')).toEqual(utc('2026-10-28T23:30:00Z'));
+  });
+
+  it('rejects malformed values', () => {
+    expect(() => fromLocalDateTime('2026-10-28 15:05')).toThrow(RangeError);
+    expect(() => fromLocalDateTime('2026-02-30T10:00')).toThrow(RangeError);
   });
 });
 

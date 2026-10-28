@@ -129,8 +129,14 @@ export function AccountDialog({
       type: values.type,
       institution: values.institution,
       last4: values.last4 || null,
-      // Credit cards start with a debt: stored as a negative balance.
-      initialBalanceMinor: isCard ? -Math.abs(initial) : initial,
+      // Credit cards start with a debt: stored as a negative balance. Unchanged
+      // on edit unless the user touched it (the field shows it without sign).
+      initialBalanceMinor:
+        account && !form.getFieldState('initialBalance').isDirty
+          ? undefined
+          : isCard
+            ? -Math.abs(initial)
+            : initial,
       creditLimitMinor: isCard ? amountOrZero(values.creditLimit, values.currency) || null : null,
       color: values.color,
       icon: values.icon,

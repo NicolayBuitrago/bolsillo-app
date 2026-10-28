@@ -1,0 +1,23 @@
+{
+  "name": "@bolsillo/config",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./biome": "./biome.json",
+    "./biome.json": "./biome.json",
+    "./tsconfig/*": "./tsconfig/*",
+    "./tokens": "./tokens/index.ts",
+    "./tokens.json": "./tokens/tokens.json",
+    "./tokens.css": "./tokens/tokens.css",
+    "./tailwind-preset": "./tokens/tailwind-preset.cjs"
+  },
+  "scripts": {
+    "tokens:css": "node scripts/build-tokens-css.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/build-tokens-css.mjs --check"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  }
+}

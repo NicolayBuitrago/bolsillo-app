@@ -1,0 +1,14 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
+  "root": true,
+  "extends": ["@bolsillo/config/biome"],
+  "vcs": {
+    "enabled": true,
+    "clientKind": "git",
+    "useIgnoreFile": true
+  },
+  "files": {
+    "ignoreUnknown": true,
+    "includes": ["**", "!**/drizzle/meta", "!**/tokens.css", "!pnpm-lock.yaml", "!**/*.md"]
+  }
+}

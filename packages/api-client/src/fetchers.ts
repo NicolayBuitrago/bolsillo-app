@@ -18,17 +18,17 @@ import type {
   UpdateTransactionInput,
 } from '@bolsillo/core/schemas';
 import type { ApiClient } from './client';
-import { toApiError } from './errors';
+import { type ResponseLike, toApiError } from './errors';
 import type { TransactionFilters } from './keys';
 
 /** Throws `ApiError` for non-2xx responses; otherwise parses the JSON body. */
-async function ok<T>(promise: Promise<Response>): Promise<T> {
+async function ok<T>(promise: Promise<ResponseLike>): Promise<T> {
   const res = await promise;
   if (!res.ok) throw await toApiError(res);
   return (await res.json()) as T;
 }
 
-async function noContent(promise: Promise<Response>): Promise<void> {
+async function noContent(promise: Promise<ResponseLike>): Promise<void> {
   const res = await promise;
   if (!res.ok) throw await toApiError(res);
 }

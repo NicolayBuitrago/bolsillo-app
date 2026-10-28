@@ -29,8 +29,18 @@ function isErrorBody(
   );
 }
 
+/**
+ * The parts of a fetch response the client reads. Structural on purpose: the
+ * DOM and React Native ship different `Response` types.
+ */
+export interface ResponseLike {
+  ok: boolean;
+  status: number;
+  json(): Promise<unknown>;
+}
+
 /** Builds an `ApiError` from a failed response, tolerating non-JSON bodies. */
-export async function toApiError(res: Response): Promise<ApiError> {
+export async function toApiError(res: ResponseLike): Promise<ApiError> {
   const body: unknown = await res.json().catch(() => null);
   if (isErrorBody(body)) {
     return new ApiError(res.status, body.error.code, body.error.message, body.error.details);

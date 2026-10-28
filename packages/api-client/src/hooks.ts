@@ -214,6 +214,8 @@ export function useCreateTransfer() {
   });
 }
 
-export function useMonthlyReport(month: string) {
-  return useQuery(monthlyReportQuery(useApiClient(), month));
+/** `null` while the month is unknown (e.g. before the user's time zone loads). */
+export function useMonthlyReport(month: string | null) {
+  const client = useApiClient();
+  return useQuery({ ...monthlyReportQuery(client, month ?? ''), enabled: month !== null });
 }

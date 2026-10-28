@@ -14,8 +14,16 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ios: {
     bundleIdentifier: 'app.bolsillo.mobile',
   },
-  plugins: ['expo-router', 'expo-status-bar'],
+  plugins: [
+    'expo-router',
+    'expo-status-bar',
+    'expo-secure-store',
+    'expo-sqlite',
+    'expo-web-browser',
+  ],
+  // Typed routes are generated only by `expo start`, so typecheck would depend
+  // on whether Metro ran before (never in CI). Kept off for deterministic checks.
   experiments: {
-    typedRoutes: true,
+    typedRoutes: false,
   },
 });

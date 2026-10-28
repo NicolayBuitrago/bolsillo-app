@@ -1,5 +1,6 @@
 import type { Database } from '@bolsillo/db';
 import { createAccountsService } from './modules/accounts/service';
+import { createBudgetsService } from './modules/budgets/service';
 import { createCategoriesService } from './modules/categories/service';
 import { createReportsService } from './modules/reports/service';
 import { createSettingsService } from './modules/settings/service';
@@ -14,7 +15,8 @@ export function createServices(db: Database) {
   const transactions = createTransactionsService({ db, settings, accounts, categories });
   const transfers = createTransfersService({ db, accounts });
   const reports = createReportsService({ db, settings });
-  return { settings, categories, accounts, transactions, transfers, reports };
+  const budgets = createBudgetsService({ db, settings, categories });
+  return { settings, categories, accounts, transactions, transfers, reports, budgets };
 }
 
 export type Services = ReturnType<typeof createServices>;

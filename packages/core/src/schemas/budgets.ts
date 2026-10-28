@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { monthKeySchema } from '../dates';
 import { currencyCodeSchema, positiveAmountMinorSchema } from '../money';
-import { dateOnlySchema, idSchema, isoDateTimeSchema } from './common';
+import { dateOnlySchema, idSchema, isoDateTimeSchema, queryBooleanSchema } from './common';
 
 export const budgetSchema = z.object({
   id: idSchema,
@@ -37,6 +37,8 @@ export const updateBudgetSchema = createBudgetSchema
   .partial();
 
 export type UpdateBudgetInput = z.input<typeof updateBudgetSchema>;
+
+export const listBudgetsQuerySchema = z.object({ includeArchived: queryBooleanSchema });
 
 export const budgetSummaryQuerySchema = z.object({ month: monthKeySchema });
 

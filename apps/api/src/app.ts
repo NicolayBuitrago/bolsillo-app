@@ -10,6 +10,7 @@ import { errorHandler, notFoundHandler } from './middleware/error-handler';
 import { requestLogger } from './middleware/request-logger';
 import { requireSession } from './middleware/session';
 import { accountsRoutes } from './modules/accounts/routes';
+import { budgetsRoutes } from './modules/budgets/routes';
 import { categoriesRoutes } from './modules/categories/routes';
 import { reportsRoutes } from './modules/reports/routes';
 import { settingsRoutes } from './modules/settings/routes';
@@ -57,7 +58,8 @@ export function createApp({ env, logger, db, auth, checkDb = () => pingDb(db) }:
     .route('/categories', categoriesRoutes(services.categories))
     .route('/transactions', transactionsRoutes(services.transactions))
     .route('/transfers', transfersRoutes(services.transfers))
-    .route('/reports', reportsRoutes(services.reports));
+    .route('/reports', reportsRoutes(services.reports))
+    .route('/budgets', budgetsRoutes(services.budgets));
 
   return app.route('/', healthRoutes({ checkDb })).route('/v1', v1);
 }

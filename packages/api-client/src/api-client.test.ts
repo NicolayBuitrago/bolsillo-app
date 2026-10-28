@@ -67,6 +67,21 @@ describe('query client', () => {
     expect(shouldRetry(2, new TypeError('network'))).toBe(false);
   });
 
+  it('reports 401 errors from queries and mutations', async () => {
+    const onUnauthenticated = vi.fn();
+    const queryClient = createQueryClient({ onUnauthenticated });
+    const unauthenticated = new ApiError(401, 'UNAUTHENTICATED', 'Inicia sesión');
+    await queryClient
+      .fetchQuery({ queryKey: ['x'], queryFn: () => Promise.reject(unauthenticated) })
+      .catch(() => undefined);
+    await queryClient
+      .getMutationCache()
+      .build(queryClient, { mutationFn: () => Promise.reject(new TypeError('network')) })
+      .execute(undefined)
+      .catch(() => undefined);
+    expect(onUnauthenticated).toHaveBeenCalledTimes(1);
+  });
+
   it('applies shared defaults', () => {
     const defaults = createQueryClient().getDefaultOptions();
     expect(defaults.queries?.staleTime).toBe(30_000);

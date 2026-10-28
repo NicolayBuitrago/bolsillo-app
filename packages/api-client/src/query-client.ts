@@ -1,4 +1,4 @@
-import { QueryClient } from '@tanstack/react-query';
+import { MutationCache, QueryCache, QueryClient } from '@tanstack/react-query';
 import { ApiError } from './errors';
 
 const MAX_RETRIES = 2;
@@ -11,9 +11,21 @@ export function shouldRetry(failureCount: number, error: unknown): boolean {
   return failureCount < MAX_RETRIES;
 }
 
+export interface QueryClientOptions {
+  /** Called when any query or mutation gets a 401 (missing or expired session). */
+  onUnauthenticated?: () => void;
+}
+
 /** QueryClient shared by web and mobile so both behave the same. */
-export function createQueryClient(): QueryClient {
+export function createQueryClient(options: QueryClientOptions = {}): QueryClient {
+  const onError = (error: unknown) => {
+    if (error instanceof ApiError && error.status === 401) {
+      options.onUnauthenticated?.();
+    }
+  };
   return new QueryClient({
+    queryCache: new QueryCache({ onError }),
+    mutationCache: new MutationCache({ onError }),
     defaultOptions: {
       queries: {
         staleTime: 30_000,

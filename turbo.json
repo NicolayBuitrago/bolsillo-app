@@ -4,10 +4,14 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": ["API_INTERNAL_URL", "EXPO_PUBLIC_*"],
       "outputs": ["dist/**", ".next/**", "!.next/cache/**"]
     },
     "typecheck": {
-      "dependsOn": ["^typecheck"]
+      "dependsOn": ["^typecheck"],
+      "inputs": ["$TURBO_DEFAULT$", ".env*"],
+      "env": ["API_INTERNAL_URL"]
     },
     "test": {
       "dependsOn": ["^build"],

@@ -96,10 +96,16 @@ Regla de dependencias: `core` no depende de nada del repo. `db` depende de `core
 
 Usar siempre las versiones estables actuales y verificar la documentación oficial de cada una.
 
+Notas de versiones (Fase 0, oct-2026):
+- **TypeScript 6.0**: TypeScript 7 (port nativo) aún no expone API programática y Next/Expo dependen de ella. Se evita `baseUrl` y `moduleResolution: node` para facilitar la migración.
+- **Tailwind**: web usa Tailwind 4; móvil usa Tailwind 3.4 porque NativeWind 4 (estable) lo exige. Los tokens viven en `packages/config/tokens/tokens.json` y cada app los consume con su versión (`tokens.css` generado para web, preset de Tailwind 3 para móvil).
+- **React** fijado a la versión que trae el SDK de Expo, también en web, para no tener Reacts duplicados en el monorepo.
+- **Puertos de desarrollo**: API `3000`, web `3100`, Postgres `5433` en el host.
+
 ## Autenticación
 
 - Better Auth montado en la API en `/api/auth/*`, con adaptador Drizzle sobre Postgres. Correo + contraseña en el MVP.
-- **Web**: Next.js hace `rewrites` de `/api/*` hacia la API, de modo que el navegador ve un solo origen y las cookies de sesión son first-party (`HttpOnly`, `Secure`, `SameSite=Lax`).
+- **Web**: Next.js hace `rewrites` de `/api/*` hacia la API, de modo que el navegador ve un solo origen y las cookies de sesión son first-party (`HttpOnly`, `Secure`, `SameSite=Lax`). Mapeo: `/api/auth/*` → `API/api/auth/*` (sin cambios, ahí vive Better Auth) y cualquier otro `/api/*` → `API/*` (ej. `/api/v1/accounts` → `/v1/accounts`, `/api/health` → `/health`). Por eso el cliente `hc` de web usa base `/api` y el de móvil usa `EXPO_PUBLIC_API_URL`.
 - **Móvil**: plugin de Expo de Better Auth; la sesión se guarda en `expo-secure-store` y se envía en cada request.
 - **Atajos de iOS**: tokens de API personales (tabla `api_tokens`), guardados como hash, con scope `captures:write`.
 - **Webhook de correo**: firma HMAC-SHA256 con secreto compartido; el usuario se identifica por la dirección de destino.

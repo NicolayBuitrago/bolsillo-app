@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: bolsillo
+          POSTGRES_PASSWORD: bolsillo
+          POSTGRES_DB: bolsillo_test
+        ports:
+          - 5433:5432
+        options: >-
+          --health-cmd "pg_isready -U bolsillo -d bolsillo_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TEST_DATABASE_URL: postgres://bolsillo:bolsillo@localhost:5433/bolsillo_test
+      # Needed by next.config.ts at typecheck/build time; nothing is called during CI.
+      API_INTERNAL_URL: http://localhost:3000
+      TURBO_TELEMETRY_DISABLED: 1
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Build api and web
+        run: pnpm turbo run build --filter @bolsillo/api --filter @bolsillo/web
+
+      - name: Audit dependencies (warning only)
+        continue-on-error: true
+        run: pnpm audit --audit-level high

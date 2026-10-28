@@ -8,8 +8,9 @@ Hono sobre Node. Prefijo `/v1`. JSON en request y response. El tipo `AppType` ex
 - **Autenticación**: todo `/v1/*` requiere sesión de Better Auth, excepto `/v1/captures/shortcut` (token de API) y `/v1/captures/email` (HMAC). `/health` es público.
 - **Aislamiento**: el `userId` sale solo de la sesión o del token, nunca del body ni de la URL. Acceder a un recurso de otro usuario responde `404`, no `403`.
 - **Montos** en JSON como entero `amountMinor` + `currency`. Fechas-hora en ISO 8601 UTC; fechas en `YYYY-MM-DD`.
-- **Idempotencia**: `POST /v1/transactions` acepta `id` (UUID v7 del cliente). Si ya existe para ese usuario con los mismos datos → `200` con el existente; con datos distintos → `409`.
-- **Paginación** por cursor: `?limit=50&cursor=<opaco>`; respuesta `{ items, nextCursor }`. Cursor = base64 de `(occurredAt, id)`.
+- **Idempotencia**: `POST /v1/transactions` acepta `id` (UUID v7 del cliente). Crearlo responde `201`; si ya existe para ese usuario con los mismos datos → `200` con el existente; con datos distintos (o si el `id` es de otro usuario) → `409`, sin revelar nada del otro registro. `POST /v1/transfers` sigue la misma regla con su `id`, que se usa como `transferGroupId` de las dos filas.
+- **Paginación** por cursor: `?limit=50&cursor=<opaco>` (`limit` por defecto 50, máximo 100); respuesta `{ items, nextCursor }`. Cursor = base64url de `(occurredAt, id)`; orden `occurredAt desc, id desc`.
+- **Fechas en filtros**: `from` y `to` son `YYYY-MM-DD` en la zona horaria del usuario (`user_settings.timezone`) y ambos incluyen el día completo.
 - **Borrado** lógico donde exista `deleted_at`; `archived_at` para cuentas, categorías y presupuestos.
 - **Errores** con forma única:
 
@@ -49,29 +50,33 @@ Hono sobre Node. Prefijo `/v1`. JSON en request y response. El tipo `AppType` ex
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/v1/accounts` | incluye `balanceMinor` calculado; `?includeArchived=true` |
-| POST | `/v1/accounts` | |
-| PATCH | `/v1/accounts/:id` | |
-| POST | `/v1/accounts/:id/archive` | |
-| POST | `/v1/accounts/:id/adjust-balance` | `{ actualBalanceMinor }` → crea movimiento de ajuste confirmado |
+| POST | `/v1/accounts` | `currency` opcional (por defecto la de los ajustes); `creditLimitMinor` solo en `credit_card` (`422` si no) |
+| PATCH | `/v1/accounts/:id` | la moneda no se puede cambiar; `422` si la cuenta está archivada; pasar de tarjeta a otro tipo borra el cupo |
+| POST | `/v1/accounts/:id/archive` | idempotente |
+| POST | `/v1/accounts/:id/adjust-balance` | `{ actualBalanceMinor, occurredAt? }` → movimiento confirmado con la categoría de sistema "Ajuste" (ingreso o gasto según la diferencia). Responde `200 { account, transaction }`; `transaction` es `null` si el saldo ya coincide |
+
+Los nombres de cuenta son únicos entre las cuentas activas del usuario (`409`).
 
 ### Categorías
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/v1/categories` | árbol (padres con `children`) |
-| POST | `/v1/categories` | |
-| PATCH | `/v1/categories/:id` | |
-| POST | `/v1/categories/:id/archive` | `422` si es de sistema |
+| GET | `/v1/categories` | árbol (padres con `children`): gastos primero, las de sistema al final, por nombre; `?includeArchived=true` |
+| POST | `/v1/categories` | `parentId` debe ser una categoría activa, de primer nivel, del mismo tipo y no de sistema (`422`) |
+| PATCH | `/v1/categories/:id` | `kind` no se puede cambiar; las de sistema solo cambian color e ícono (`422`); una categoría con hijas no puede volverse subcategoría |
+| POST | `/v1/categories/:id/archive` | `422` si es de sistema; archiva también sus subcategorías |
 
 ### Movimientos
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/v1/transactions` | filtros: `from`, `to`, `accountId`, `categoryId`, `type`, `status`, `source`, `q` (comercio/nota); paginado |
+| GET | `/v1/transactions` | filtros: `from`, `to`, `accountId`, `categoryId` (incluye sus subcategorías), `type`, `status`, `source`, `q` (comercio/nota, sin distinguir mayúsculas); paginado |
 | GET | `/v1/transactions/:id` | |
-| POST | `/v1/transactions` | gasto o ingreso; idempotente por `id` |
-| PATCH | `/v1/transactions/:id` | |
-| DELETE | `/v1/transactions/:id` | borrado lógico; en transferencias borra ambas filas |
+| POST | `/v1/transactions` | gasto o ingreso manual: siempre `status = confirmed` y `source = manual` (lo pendiente solo llega por captura); la moneda es la de la cuenta; idempotente por `id` |
+| PATCH | `/v1/transactions/:id` | en una fila de transferencia solo `amountMinor`, `occurredAt` y `note`, que se aplican a las dos filas (otros campos → `422`) |
+| DELETE | `/v1/transactions/:id` | `204`; borrado lógico; en transferencias borra ambas filas |
 | POST | `/v1/transactions/:id/confirm` | body opcional con correcciones; actualiza `merchant_rules` |
-| POST | `/v1/transfers` | `{ id, fromAccountId, toAccountId, amountMinor, occurredAt, note }` → crea el par |
+| POST | `/v1/transfers` | `{ id, fromAccountId, toAccountId, amountMinor, occurredAt, note }` → crea el par (`201 { id, out, in }`); cuentas distintas (`400`) y con la misma moneda (`422`) |
+
+Reglas de movimientos: la categoría debe ser del mismo tipo que el movimiento (gasto o ingreso) y estar activa; la cuenta debe estar activa (`422`). Una cuenta o categoría de otro usuario responde `404`.
 
 ### Bandeja y capturas
 | Método | Ruta | Descripción |
@@ -110,7 +115,7 @@ Hono sobre Node. Prefijo `/v1`. JSON en request y response. El tipo `AppType` ex
 ### Reportes y exportación
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/v1/reports/monthly?month=YYYY-MM` | ingresos, gastos, neto, por categoría, por cuenta |
+| GET | `/v1/reports/monthly?month=YYYY-MM` | ingresos, gastos y neto por moneda; por categoría (agrupado en la categoría principal; `categoryId: null` = sin categoría); por cuenta. Mes en la zona del usuario. Existe desde la fase 1 porque lo usa Inicio |
 | GET | `/v1/reports/trend?months=6` | ingresos y gastos por mes |
 | GET | `/v1/export/transactions.csv?from&to` | CSV en UTF-8 con BOM (abre bien en Excel), separador `;` |
 

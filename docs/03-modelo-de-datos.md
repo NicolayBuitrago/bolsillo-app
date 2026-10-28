@@ -104,6 +104,12 @@ Categorías por defecto al registrarse:
 
 Restricciones: una transferencia son exactamente dos filas con el mismo `transfer_group_id`, una `transfer_out` y una `transfer_in`, mismo monto y moneda, cuentas distintas. Se crean y eliminan juntas en una transacción de base de datos.
 
+Restricciones en la base (fase 1):
+- `check (amount_minor > 0)`, `check (account_id is not null or status = 'pending')` y `check ((transfer_group_id is not null) = (type in ('transfer_out', 'transfer_in')))`.
+- Único parcial `(transfer_group_id, type)` donde `transfer_group_id is not null`: como mucho una fila de cada lado por transferencia.
+- Llaves foráneas compuestas `(user_id, account_id) → financial_accounts (user_id, id)` y `(user_id, category_id) → categories (user_id, id)` (y `(user_id, parent_id)` en `categories`): la propia base impide enlazar datos de otro usuario.
+- `capture_id` y `recurring_payment_id` se agregan junto con sus tablas (fases 3 y 2).
+
 ### `raw_captures`
 | Columna | Tipo | Notas |
 |---|---|---|
@@ -203,4 +209,6 @@ Apps o remitentes que el usuario decidió escuchar.
 
 ## Seed de desarrollo
 
-`pnpm db:seed` crea un usuario demo (`demo@bolsillo.local` / contraseña en `.env.example`), cuentas de ejemplo, ~3 meses de movimientos variados, dos presupuestos, tres pagos recurrentes y algunas capturas pendientes con fixtures `fake: true`.
+`pnpm db:seed` crea un usuario demo (`demo@bolsillo.local` / contraseña `SEED_DEMO_PASSWORD` de `packages/db/.env.example`), cuentas de ejemplo, ~3 meses de movimientos variados, dos presupuestos, tres pagos recurrentes y algunas capturas pendientes con fixtures `fake: true`.
+
+Cada fase agrega su parte: en la fase 1 son el usuario, cuatro cuentas (incluida una tarjeta de crédito), movimientos y transferencias. El seed es determinista y reemplaza al usuario demo cada vez que corre.

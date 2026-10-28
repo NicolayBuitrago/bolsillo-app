@@ -22,8 +22,14 @@ cp apps/mobile/.env.example apps/mobile/.env
 cp packages/db/.env.example packages/db/.env
 
 pnpm db:migrate
+pnpm db:seed        # usuario demo con ~3 meses de movimientos (opcional)
 pnpm dev            # api :3000 · web :3100 · Metro :8081
 ```
+
+Usuario demo del seed: `demo@bolsillo.local` / `demo-bolsillo-2026` (valor de `SEED_DEMO_PASSWORD` en `packages/db/.env.example`; solo desarrollo).
+
+- Web: http://localhost:3100 (estado del sistema en `/status`).
+- Móvil: development build (`pnpm --filter @bolsillo/mobile android` la primera vez). En el emulador la API es `http://10.0.2.2:3000`; en un teléfono físico pon la IP de tu PC en `apps/mobile/.env`.
 
 ## Comandos
 

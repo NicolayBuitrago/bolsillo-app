@@ -37,7 +37,7 @@ Reglas:
 1. Better Auth en la API (correo + contraseña); rewrites en web; plugin Expo + SecureStore en móvil.
 2. Esquema: `user_settings`, `financial_accounts`, `categories`, `transactions` con índices y restricciones de `03-modelo-de-datos.md`.
 3. Al registrarse: settings y categorías por defecto en una transacción.
-4. Endpoints de ajustes, cuentas (con saldo calculado y ajuste de saldo), categorías, movimientos (CRUD, filtros, paginación, idempotencia) y transferencias.
+4. Endpoints de ajustes, cuentas (con saldo calculado y ajuste de saldo), categorías, movimientos (CRUD, filtros, paginación, idempotencia), transferencias y `reports/monthly` (lo necesita Inicio; se adelantó desde la fase 2).
 5. Hooks de TanStack Query en `api-client` para todo lo anterior.
 6. Móvil y web: login/registro, Inicio (resumen del mes, gasto por categoría, saldos), Movimientos (lista por día, filtros, búsqueda), Nuevo/editar movimiento, Transferencia, Cuentas, Categorías.
 7. Móvil: outbox en SQLite para crear movimientos sin red.
@@ -59,7 +59,7 @@ Reglas:
 1. Esquema y endpoints de `budgets` (con `summary`) y `recurring_payments` (con `upcoming` y `pay`).
 2. Job diario de recurrentes con `auto_create` y lock con `pg_advisory_lock`.
 3. Móvil: programar notificaciones locales con `expo-notifications` a partir de `upcoming`; reprogramar al cambiar datos.
-4. Reportes `monthly` y `trend`; pantallas de reportes en web y móvil con gráficos simples.
+4. Reporte `trend` (`monthly` existe desde la fase 1); pantallas de reportes en web y móvil con gráficos simples.
 5. Exportación CSV.
 
 **Criterios de aceptación**

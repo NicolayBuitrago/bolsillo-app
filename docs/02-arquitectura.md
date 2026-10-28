@@ -102,6 +102,13 @@ Notas de versiones (Fase 0, oct-2026):
 - **React** fijado a la versión que trae el SDK de Expo, también en web, para no tener Reacts duplicados en el monorepo.
 - **Puertos de desarrollo**: API `3000`, web `3100`, Postgres `5433` en el host.
 
+Notas de la fase 1:
+- **Better Auth 1.7**: el adaptador vive en `@better-auth/drizzle-adapter` y el generador de esquema es el CLI `auth` (`pnpm dlx auth generate`). Las tablas de Better Auth están en `packages/db/src/schema/auth.ts` con ids `uuid` nativos (`uuidv7()` de Postgres 18).
+- **Bootstrap de usuario**: el hook `after` de Better Auth corre después del commit, así que settings y categorías no pueden ir en la misma transacción que el usuario. Ver `docs/adr/0001-bootstrap-de-usuario.md`.
+- **Drizzle en la API**: los operadores (`eq`, `and`, `sql`…) se importan de `@bolsillo/db/orm` para usar la misma copia de `drizzle-orm` que el esquema.
+- **Móvil**: Better Auth guarda la cookie en SecureStore y el cliente `hc` la envía en `Cookie` con `credentials: 'omit'`. La caché de TanStack Query se guarda en SQLite (`expo-sqlite/kv-store`) y se borra al cambiar de usuario. Las rutas tipadas de expo-router están apagadas: solo se generan con `expo start` y el typecheck dependía de eso.
+- **Rate limit de auth**: 10/min por IP con el almacenamiento en memoria de Better Auth (`/get-session` excluido; inicio de sesión y registro conservan la regla más estricta de Better Auth). La IP real del cliente detrás del proxy de producción se configura en la fase 6.
+
 ## Autenticación
 
 - Better Auth montado en la API en `/api/auth/*`, con adaptador Drizzle sobre Postgres. Correo + contraseña en el MVP.
@@ -109,7 +116,7 @@ Notas de versiones (Fase 0, oct-2026):
 - **Móvil**: plugin de Expo de Better Auth; la sesión se guarda en `expo-secure-store` y se envía en cada request.
 - **Atajos de iOS**: tokens de API personales (tabla `api_tokens`), guardados como hash, con scope `captures:write`.
 - **Webhook de correo**: firma HMAC-SHA256 con secreto compartido; el usuario se identifica por la dirección de destino.
-- Al registrarse un usuario se crean sus `user_settings` y las categorías por defecto, dentro de una transacción.
+- Al registrarse un usuario se crean sus `user_settings` y las categorías por defecto en una transacción propia e idempotente, que se repite al iniciar sesión por si falló (ADR 0001).
 
 ## Flujo de captura (resumen; detalle en `04-captura-automatica.md`)
 

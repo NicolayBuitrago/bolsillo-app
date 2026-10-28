@@ -12,6 +12,7 @@ import { requireSession } from './middleware/session';
 import { accountsRoutes } from './modules/accounts/routes';
 import { budgetsRoutes } from './modules/budgets/routes';
 import { categoriesRoutes } from './modules/categories/routes';
+import { exportRoutes } from './modules/export/routes';
 import { recurringRoutes } from './modules/recurring/routes';
 import { reportsRoutes } from './modules/reports/routes';
 import { settingsRoutes } from './modules/settings/routes';
@@ -61,7 +62,8 @@ export function createApp({ env, logger, db, auth, checkDb = () => pingDb(db) }:
     .route('/transfers', transfersRoutes(services.transfers))
     .route('/reports', reportsRoutes(services.reports))
     .route('/budgets', budgetsRoutes(services.budgets))
-    .route('/recurring', recurringRoutes(services.recurring));
+    .route('/recurring', recurringRoutes(services.recurring))
+    .route('/export', exportRoutes(services.exporter));
 
   return app.route('/', healthRoutes({ checkDb })).route('/v1', v1);
 }

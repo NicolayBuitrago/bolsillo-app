@@ -100,3 +100,21 @@ export async function totalsByAccount(db: Database, userId: string, range: Range
     expenseMinor: toSafeInteger(row.expense),
   }));
 }
+
+/** Income and expenses per local month (`YYYY-MM` in `timezone`) and currency. */
+export async function totalsByMonth(db: Database, userId: string, range: Range, timezone: string) {
+  const month = sql<string>`to_char(${transactions.occurredAt} at time zone ${timezone}, 'YYYY-MM')`;
+  const rows = await db
+    .select({ month, currency: transactions.currency, income: incomeSum, expense: expenseSum })
+    .from(transactions)
+    .where(reportable(userId, range))
+    // By position: the month expression carries a bind parameter, so repeating
+    // it in GROUP BY would not match the selected one.
+    .groupBy(sql.raw('1'), sql.raw('2'));
+  return rows.map((row) => ({
+    month: row.month,
+    currency: row.currency,
+    incomeMinor: toSafeInteger(row.income),
+    expenseMinor: toSafeInteger(row.expense),
+  }));
+}

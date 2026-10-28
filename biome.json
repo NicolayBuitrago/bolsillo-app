@@ -10,5 +10,13 @@
   "files": {
     "ignoreUnknown": true,
     "includes": ["**", "!**/drizzle/meta", "!**/tokens.css", "!pnpm-lock.yaml", "!**/*.md"]
-  }
+  },
+  "overrides": [
+    {
+      "includes": ["apps/web/src/components/ui/**"],
+      "linter": {
+        "enabled": false
+      }
+    }
+  ]
 }

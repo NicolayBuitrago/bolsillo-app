@@ -1,0 +1,18 @@
+export const homeStrings = {
+  title: 'Inicio',
+  previousMonth: 'Mes anterior',
+  nextMonth: 'Mes siguiente',
+  income: 'Ingresos',
+  expenses: 'Gastos',
+  net: 'Neto',
+  byCategory: 'Gasto por categoría',
+  byCategoryEmpty: 'Sin gastos confirmados este mes.',
+  balances: 'Saldos',
+  noAccounts: 'Aún no tienes cuentas',
+  noAccountsHint: 'Crea tu primera cuenta para empezar a registrar movimientos.',
+  createAccount: 'Crear cuenta',
+  uncategorized: 'Sin categoría',
+  debt: 'Deuda',
+  available: 'Disponible',
+  addTransaction: 'Nuevo movimiento',
+} as const;

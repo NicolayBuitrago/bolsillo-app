@@ -1,21 +1,23 @@
 import { createDb, pingDb } from '@bolsillo/db';
 import { createTemporaryDatabase, type TemporaryDatabase } from '@bolsillo/db/testing';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { createTestApp, TEST_WEB_ORIGIN } from './test/helpers';
+import { buildTestApp, TEST_WEB_ORIGIN } from './test/helpers';
+
+let tmp: TemporaryDatabase;
+
+beforeAll(async () => {
+  tmp = await createTemporaryDatabase();
+});
+
+afterAll(async () => {
+  await tmp.destroy();
+});
+
+const createTestApp = (checkDb: () => Promise<boolean>) => buildTestApp(tmp.db, { checkDb });
 
 describe('GET /health', () => {
-  let tmp: TemporaryDatabase;
-
-  beforeAll(async () => {
-    tmp = await createTemporaryDatabase();
-  });
-
-  afterAll(async () => {
-    await tmp.destroy();
-  });
-
   it('reports ok when the database answers', async () => {
-    const { app } = createTestApp(() => pingDb(tmp.db));
+    const { app } = buildTestApp(tmp.db);
     const res = await app.request('/health');
     expect(res.status).toBe(200);
     expect(await res.json()).toEqual({ status: 'ok', db: 'ok' });
@@ -66,7 +68,7 @@ describe('cross-cutting middleware', () => {
 
   it('answers unknown routes with the standard error shape', async () => {
     const { app } = createTestApp(healthy);
-    const res = await app.request('/v1/nope');
+    const res = await app.request('/nope');
     expect(res.status).toBe(404);
     expect(await res.json()).toEqual({
       error: { code: 'NOT_FOUND', message: 'Ruta no encontrada' },

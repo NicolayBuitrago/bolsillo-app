@@ -4,8 +4,8 @@ import type { Logger } from '../logger';
 import type { AppEnv } from '../types';
 
 /**
- * Logs one line per request with requestId, method, route pattern, status and
- * duration. Never bodies, query strings or headers.
+ * Logs one line per request with requestId, userId (when authenticated), method,
+ * route pattern, status and duration. Never bodies, query strings or headers.
  */
 export function requestLogger(logger: Logger) {
   return createMiddleware<AppEnv>(async (c, next) => {
@@ -14,6 +14,7 @@ export function requestLogger(logger: Logger) {
     logger.info(
       {
         requestId: c.get('requestId'),
+        userId: c.get('userId'),
         method: c.req.method,
         route: routePath(c, -1),
         status: c.res.status,

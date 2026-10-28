@@ -1,6 +1,7 @@
-import { createDb, pingDb } from '@bolsillo/db';
+import { createDb } from '@bolsillo/db';
 import { serve } from '@hono/node-server';
 import { createApp } from './app';
+import { createAuth } from './auth';
 import { EnvValidationError, loadEnv } from './env';
 import { createLogger } from './logger';
 
@@ -20,7 +21,8 @@ const env = readEnv();
 const logger = createLogger(env);
 const database = createDb(env.DATABASE_URL);
 
-const app = createApp({ env, logger, checkDb: () => pingDb(database.db) });
+const auth = createAuth({ db: database.db, env, logger });
+const app = createApp({ env, logger, db: database.db, auth });
 
 const server = serve({ fetch: app.fetch, port: env.PORT }, (info) => {
   logger.info({ port: info.port, env: env.NODE_ENV }, 'api listening');

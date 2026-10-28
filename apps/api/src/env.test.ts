@@ -6,6 +6,8 @@ import { EnvValidationError, loadEnv } from './env';
 const validEnv = {
   DATABASE_URL: 'postgres://bolsillo:bolsillo@localhost:5433/bolsillo',
   WEB_ORIGIN: 'http://localhost:3100',
+  BETTER_AUTH_SECRET: 'a-test-secret-with-at-least-32-characters',
+  BETTER_AUTH_URL: 'http://localhost:3000',
 };
 
 describe('loadEnv', () => {
@@ -25,12 +27,15 @@ describe('loadEnv', () => {
     expect(env.ANTHROPIC_API_KEY).toBeUndefined();
   });
 
-  it.each(['DATABASE_URL', 'WEB_ORIGIN'])('fails when %s is missing', (name) => {
-    const env: Record<string, string> = { ...validEnv };
-    delete env[name];
-    expect(() => loadEnv(env)).toThrow(EnvValidationError);
-    expect(() => loadEnv(env)).toThrow(name);
-  });
+  it.each(['DATABASE_URL', 'WEB_ORIGIN', 'BETTER_AUTH_SECRET', 'BETTER_AUTH_URL'])(
+    'fails when %s is missing',
+    (name) => {
+      const env: Record<string, string> = { ...validEnv };
+      delete env[name];
+      expect(() => loadEnv(env)).toThrow(EnvValidationError);
+      expect(() => loadEnv(env)).toThrow(name);
+    },
+  );
 
   it('rejects invalid values without echoing them', () => {
     let message = '';
@@ -44,7 +49,7 @@ describe('loadEnv', () => {
     expect(message).not.toContain('hunter2');
   });
 
-  it('requires a long auth secret when one is provided', () => {
+  it('requires a long auth secret', () => {
     expect(() => loadEnv({ ...validEnv, BETTER_AUTH_SECRET: 'short' })).toThrow(
       'BETTER_AUTH_SECRET',
     );

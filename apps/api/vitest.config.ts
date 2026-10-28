@@ -9,6 +9,10 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.ts'],
       exclude: ['src/**/*.test.ts', 'src/test/**', 'src/index.ts'],
+      // docs/06-convenciones.md: services >= 80 %.
+      thresholds: {
+        'src/modules/**/service.ts': { lines: 80, functions: 80, branches: 80, statements: 80 },
+      },
     },
   },
 });

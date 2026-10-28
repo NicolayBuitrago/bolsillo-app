@@ -16,11 +16,9 @@ export const envSchema = z.object({
   PORT: z.coerce.number().int().min(1).max(65_535).default(3000),
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   WEB_ORIGIN: z.url({ protocol: /^https?$/ }),
+  BETTER_AUTH_SECRET: z.string().min(32, 'Must be at least 32 characters'),
+  BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-
-  // Phase 1 (Better Auth).
-  BETTER_AUTH_SECRET: optionalString.pipe(z.string().min(32).optional()),
-  BETTER_AUTH_URL: optionalString.pipe(z.url().optional()),
 
   // Phase 3 (captures).
   DEDUP_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),

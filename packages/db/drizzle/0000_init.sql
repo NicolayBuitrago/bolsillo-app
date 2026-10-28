@@ -1,0 +1,1 @@
+-- Baseline migration: no tables yet. Phase 1 adds the domain schema.

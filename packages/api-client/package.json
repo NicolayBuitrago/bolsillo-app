@@ -1,0 +1,30 @@
+{
+  "name": "@bolsillo/api-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "@tanstack/react-query": "5.105.0",
+    "hono": "4.13.14"
+  },
+  "devDependencies": {
+    "@bolsillo/api": "workspace:*",
+    "@bolsillo/config": "workspace:*",
+    "@types/node": "^22.20.5",
+    "@types/react": "19.3.0",
+    "react": "19.3.0",
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  }
+}

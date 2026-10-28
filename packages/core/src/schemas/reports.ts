@@ -44,3 +44,40 @@ export const monthlyReportSchema = z.object({
 });
 
 export type MonthlyReport = z.infer<typeof monthlyReportSchema>;
+
+export const TREND_MONTHS = { max: 24, default: 6 } as const;
+
+export const trendQuerySchema = z.object({
+  months: z
+    .string()
+    .regex(/^\d+$/)
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(TREND_MONTHS.max))
+    .optional(),
+});
+
+/** Income and expenses per month (oldest first, current month last; empty months included). */
+export const trendReportSchema = z.object({
+  timezone: z.string(),
+  months: z.array(
+    z.object({
+      month: monthKeySchema,
+      totals: z.array(
+        z.object({
+          currency: currencyCodeSchema,
+          incomeMinor: amountMinorSchema,
+          expenseMinor: amountMinorSchema,
+          netMinor: amountMinorSchema,
+        }),
+      ),
+    }),
+  ),
+});
+
+export type TrendReport = z.infer<typeof trendReportSchema>;
+
+/** `GET /v1/export/transactions.csv`: optional inclusive dates in the user's time zone. */
+export const exportQuerySchema = z.object({
+  from: z.iso.date().optional(),
+  to: z.iso.date().optional(),
+});

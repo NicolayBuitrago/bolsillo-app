@@ -144,3 +144,37 @@ describe('DEFAULT_CATEGORIES', () => {
     }
   });
 });
+
+describe('phase 2 schemas', () => {
+  it('requires a fixed amount to auto-create recurring transactions', async () => {
+    const { createRecurringPaymentSchema } = await import('./recurring');
+    const base = { name: 'Arriendo', frequency: 'monthly', firstDueOn: '2026-10-31' };
+    expect(createRecurringPaymentSchema.safeParse({ ...base, autoCreate: true }).success).toBe(
+      false,
+    );
+    expect(
+      createRecurringPaymentSchema.safeParse({ ...base, autoCreate: true, amountMinor: 100 })
+        .success,
+    ).toBe(true);
+    expect(createRecurringPaymentSchema.safeParse({ ...base, remindDaysBefore: 31 }).success).toBe(
+      false,
+    );
+  });
+
+  it('bounds the upcoming window and trend length', async () => {
+    const { upcomingQuerySchema } = await import('./recurring');
+    const { trendQuerySchema } = await import('./reports');
+    expect(upcomingQuerySchema.parse({ days: '30' })).toEqual({ days: 30 });
+    expect(upcomingQuerySchema.safeParse({ days: '91' }).success).toBe(false);
+    expect(trendQuerySchema.safeParse({ months: '25' }).success).toBe(false);
+    expect(trendQuerySchema.parse({})).toEqual({});
+  });
+
+  it('validates budgets', async () => {
+    const { createBudgetSchema } = await import('./budgets');
+    const valid = { categoryId: ACCOUNT_A, amountMinor: 100 };
+    expect(createBudgetSchema.safeParse(valid).success).toBe(true);
+    expect(createBudgetSchema.safeParse({ ...valid, amountMinor: 0 }).success).toBe(false);
+    expect(createBudgetSchema.safeParse({ ...valid, startsOn: '2026-10' }).success).toBe(false);
+  });
+});

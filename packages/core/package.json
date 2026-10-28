@@ -10,7 +10,8 @@
     "./dates": "./src/dates/index.ts",
     "./schemas": "./src/schemas/index.ts",
     "./categories": "./src/categories/index.ts",
-    "./ids": "./src/ids.ts"
+    "./ids": "./src/ids.ts",
+    "./recurring": "./src/recurring/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit",

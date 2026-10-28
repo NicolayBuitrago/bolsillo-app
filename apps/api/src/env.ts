@@ -19,6 +19,11 @@ export const envSchema = z.object({
   BETTER_AUTH_SECRET: z.string().min(32, 'Must be at least 32 characters'),
   BETTER_AUTH_URL: z.url({ protocol: /^https?$/ }),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+  /** Scheduled jobs (recurring payments). Off for extra replicas or one-off scripts. */
+  JOBS_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((value) => value === 'true'),
 
   // Phase 3 (captures).
   DEDUP_WINDOW_MINUTES: z.coerce.number().int().positive().default(15),

@@ -1,7 +1,7 @@
 import { createApp } from '../app';
 import { createLogger } from '../logger';
 
-export const TEST_WEB_ORIGIN = 'http://localhost:3001';
+export const TEST_WEB_ORIGIN = 'http://localhost:3100';
 
 /** Logger that keeps every line in memory so tests can inspect what was logged. */
 export function createMemoryLogger() {

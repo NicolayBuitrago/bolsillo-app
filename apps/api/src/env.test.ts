@@ -5,7 +5,7 @@ import { EnvValidationError, loadEnv } from './env';
 
 const validEnv = {
   DATABASE_URL: 'postgres://bolsillo:bolsillo@localhost:5433/bolsillo',
-  WEB_ORIGIN: 'http://localhost:3001',
+  WEB_ORIGIN: 'http://localhost:3100',
 };
 
 describe('loadEnv', () => {

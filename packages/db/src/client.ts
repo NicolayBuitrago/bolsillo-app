@@ -1,9 +1,13 @@
-import { drizzle, type NodePgDatabase } from 'drizzle-orm/node-postgres';
+import { drizzle, type NodePgDatabase, type NodePgQueryResultHKT } from 'drizzle-orm/node-postgres';
+import type { PgDatabase } from 'drizzle-orm/pg-core';
 import { Pool, type PoolConfig } from 'pg';
 import * as schema from './schema';
 
 export type Schema = typeof schema;
 export type Database = NodePgDatabase<Schema>;
+
+/** A connection or an open transaction: repositories accept either. */
+export type Executor = PgDatabase<NodePgQueryResultHKT, Schema>;
 
 export interface DbHandle {
   db: Database;

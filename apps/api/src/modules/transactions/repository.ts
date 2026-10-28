@@ -1,5 +1,5 @@
 import type { TransactionSource, TransactionStatus, TransactionType } from '@bolsillo/core/schemas';
-import type { Database } from '@bolsillo/db';
+import type { Executor } from '@bolsillo/db';
 import {
   and,
   asc,
@@ -57,7 +57,7 @@ function likePattern(text: string): string {
 }
 
 export function listTransactions(
-  db: Database,
+  db: Executor,
   userId: string,
   filters: TransactionFilters,
 ): Promise<TransactionRow[]> {
@@ -100,7 +100,7 @@ export function listTransactions(
 
 /** Active (not deleted) transaction of the user. */
 export async function findTransaction(
-  db: Database,
+  db: Executor,
   userId: string,
   id: string,
 ): Promise<TransactionRow | undefined> {
@@ -113,7 +113,7 @@ export async function findTransaction(
 
 /** Any transaction of the user with this id, deleted or not (idempotency checks). */
 export async function findTransactionIncludingDeleted(
-  db: Database,
+  db: Executor,
   userId: string,
   id: string,
 ): Promise<TransactionRow | undefined> {
@@ -126,7 +126,7 @@ export async function findTransactionIncludingDeleted(
 
 /** Both rows of a transfer (deleted or not), `transfer_out` first. */
 export function findTransferRows(
-  db: Database,
+  db: Executor,
   userId: string,
   groupId: string,
 ): Promise<TransactionRow[]> {
@@ -142,7 +142,7 @@ export function findTransferRows(
  * conflict so the caller can apply the idempotency rules.
  */
 export async function insertTransaction(
-  db: Database,
+  db: Executor,
   userId: string,
   values: TransactionInsert,
 ): Promise<TransactionRow | undefined> {
@@ -156,7 +156,7 @@ export async function insertTransaction(
 
 /** Inserts both rows of a transfer atomically. */
 export function insertTransfer(
-  db: Database,
+  db: Executor,
   userId: string,
   out: TransactionInsert,
   incoming: TransactionInsert,
@@ -173,7 +173,7 @@ export function insertTransfer(
 }
 
 export async function updateTransaction(
-  db: Database,
+  db: Executor,
   userId: string,
   id: string,
   patch: TransactionPatch,
@@ -188,7 +188,7 @@ export async function updateTransaction(
 
 /** Applies the same change to both rows of a transfer. */
 export function updateTransferRows(
-  db: Database,
+  db: Executor,
   userId: string,
   groupId: string,
   patch: Pick<TransactionPatch, 'amountMinor' | 'occurredAt' | 'note'>,
@@ -202,7 +202,7 @@ export function updateTransferRows(
 
 /** Soft-deletes a transaction, or both rows when `groupId` is given. */
 export async function softDeleteTransaction(
-  db: Database,
+  db: Executor,
   userId: string,
   target: { id: string } | { groupId: string },
 ): Promise<number> {
@@ -219,4 +219,19 @@ export async function softDeleteTransaction(
     )
     .returning({ id: transactions.id });
   return rows.length;
+}
+
+/** Turns a pending transaction into a confirmed one, applying corrections. */
+export async function confirmTransaction(
+  db: Executor,
+  userId: string,
+  id: string,
+  patch: TransactionPatch,
+): Promise<TransactionRow | undefined> {
+  const [row] = await db
+    .update(transactions)
+    .set({ ...patch, status: 'confirmed', confirmedAt: new Date() })
+    .where(and(active(userId), eq(transactions.id, id), eq(transactions.status, 'pending')))
+    .returning();
+  return row;
 }

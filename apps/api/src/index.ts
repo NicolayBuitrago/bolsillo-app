@@ -1,10 +1,4 @@
-import { createDb } from '@bolsillo/db';
-import { serve } from '@hono/node-server';
-import { createApp } from './app';
-import { createAuth } from './auth';
 import { EnvValidationError, loadEnv } from './env';
-import { startJobs } from './jobs';
-import { createLogger } from './logger';
 
 function readEnv() {
   try {
@@ -18,7 +12,20 @@ function readEnv() {
   }
 }
 
+// Validate the environment before loading the rest of the app, so a
+// misconfigured process fails fast.
 const env = readEnv();
+
+const [{ createDb }, { serve }, { createApp }, { createAuth }, { startJobs }, { createLogger }] =
+  await Promise.all([
+    import('@bolsillo/db'),
+    import('@hono/node-server'),
+    import('./app'),
+    import('./auth'),
+    import('./jobs'),
+    import('./logger'),
+  ]);
+
 const logger = createLogger(env);
 const database = createDb(env.DATABASE_URL);
 

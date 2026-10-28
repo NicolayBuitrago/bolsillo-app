@@ -1,0 +1,1 @@
+{"code":"export*from\"drizzle-orm\";import{alias}from\"drizzle-orm/pg-core\";export{alias};\n","warnings":[],"map":{"version":3,"mappings":"AAKA,WAAc,cACd,OAAS,UAAa","names":[],"ignoreList":[],"sources":["D:\\Users\\Nicolay.Buitrago\\Desktop\\personal_projects\\bolsillo-app\\packages\\db\\src\\orm.ts"],"sourcesContent":[null]}}

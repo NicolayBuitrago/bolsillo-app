@@ -77,7 +77,7 @@ describe('query client', () => {
 describe('types', () => {
   it('are inferred from the API routes', () => {
     const client = createApiClient('http://api.test');
-    expectTypeOf(fetchHealth(client)).resolves.toEqualTypeOf<
+    expectTypeOf(fetchHealth).returns.resolves.toEqualTypeOf<
       { status: 'ok'; db: 'ok' } | { status: 'degraded'; db: 'error' }
     >();
     // @ts-expect-error routes that the API does not define are type errors

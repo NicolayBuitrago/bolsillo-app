@@ -1,9 +1,12 @@
+import { useApiClient, useSettings } from '@bolsillo/api-client';
+import { DEFAULT_TIME_ZONE, toDateKey } from '@bolsillo/core/dates';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { type Href, useRouter } from 'expo-router';
-import type { ComponentProps } from 'react';
+import { type ComponentProps, useState } from 'react';
 import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui';
+import { exportTransactionsCsv } from '@/features/reports/export-csv';
 import { useOutbox, useOutboxEntries } from '@/features/sync/outbox-provider';
 import { authClient } from '@/lib/auth-client';
 
@@ -29,6 +32,23 @@ export function MoreScreen() {
   const outbox = useOutbox();
   const entries = useOutboxEntries(session?.user.id);
   const failed = entries.filter((entry) => entry.status === 'failed');
+  const client = useApiClient();
+  const settings = useSettings();
+  const [exporting, setExporting] = useState(false);
+
+  const exportCsv = async () => {
+    setExporting(true);
+    try {
+      await exportTransactionsCsv(
+        client,
+        toDateKey(new Date(), settings.data?.timezone ?? DEFAULT_TIME_ZONE),
+      );
+    } catch {
+      Alert.alert('No se pudo exportar', 'Revisa tu conexión e intenta de nuevo.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const signOut = () => {
     const pending = entries.length;
@@ -58,6 +78,9 @@ export function MoreScreen() {
           ) : null}
         </View>
         <View>
+          <MenuItem icon="pie-chart-outline" label="Presupuestos" href="/budgets" />
+          <MenuItem icon="repeat-outline" label="Pagos recurrentes" href="/recurring" />
+          <MenuItem icon="bar-chart-outline" label="Reportes" href="/reports" />
           <MenuItem icon="swap-horizontal-outline" label="Transferencia" href="/transfer" />
           <MenuItem icon="pricetags-outline" label="Categorías" href="/categories" />
           <MenuItem icon="pulse-outline" label="Estado del sistema" href="/status" />
@@ -92,6 +115,12 @@ export function MoreScreen() {
             </View>
           </View>
         ) : null}
+        <Button
+          label="Exportar movimientos (CSV)"
+          variant="outline"
+          loading={exporting}
+          onPress={exportCsv}
+        />
         <Button label="Cerrar sesión" variant="outline" onPress={signOut} />
       </ScrollView>
     </SafeAreaView>

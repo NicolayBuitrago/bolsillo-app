@@ -20,6 +20,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-secure-store',
     'expo-sqlite',
     'expo-web-browser',
+    'expo-notifications',
+    'expo-sharing',
   ],
   // Typed routes are generated only by `expo start`, so typecheck would depend
   // on whether Metro ran before (never in CI). Kept off for deterministic checks.

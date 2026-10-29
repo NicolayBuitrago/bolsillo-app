@@ -1,7 +1,9 @@
 import { Stack } from 'expo-router';
+import { useReminderSync } from '@/features/reminders/use-reminder-sync';
 
 /** Signed-in area: tabs plus pushed screens with a native header. */
 export default function AppLayout() {
+  useReminderSync();
   return (
     <Stack
       screenOptions={{
@@ -24,6 +26,18 @@ export default function AppLayout() {
         options={{ title: 'Ajustar saldo', presentation: 'modal' }}
       />
       <Stack.Screen name="status" options={{ title: 'Estado del sistema' }} />
+      <Stack.Screen name="budgets" options={{ title: 'Presupuestos' }} />
+      <Stack.Screen name="budget-form" options={{ title: 'Presupuesto', presentation: 'modal' }} />
+      <Stack.Screen name="recurring" options={{ title: 'Pagos recurrentes' }} />
+      <Stack.Screen
+        name="recurring-form"
+        options={{ title: 'Pago recurrente', presentation: 'modal' }}
+      />
+      <Stack.Screen
+        name="recurring-pay"
+        options={{ title: 'Registrar pago', presentation: 'modal' }}
+      />
+      <Stack.Screen name="reports" options={{ title: 'Reportes' }} />
     </Stack>
   );
 }

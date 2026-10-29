@@ -10,6 +10,7 @@ import { CategoryIcon } from '@/components/category-icon';
 import { NewTransactionFab } from '@/components/fab';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
 import { Card, SectionTitle } from '@/components/ui';
+import { UpcomingList } from '@/features/recurring/upcoming-list';
 import { SyncBanner } from '@/features/sync/sync-banner';
 import { authClient } from '@/lib/auth-client';
 import { homeStrings as t } from './strings';
@@ -73,6 +74,11 @@ export function HomeScreen() {
             <SpendingByCategory report={report.data} />
           </>
         )}
+
+        <Card className="gap-2">
+          <SectionTitle>{t.upcoming}</SectionTitle>
+          <UpcomingList limit={3} />
+        </Card>
 
         <Card className="gap-2">
           <SectionTitle>{t.balances}</SectionTitle>

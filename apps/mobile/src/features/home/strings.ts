@@ -8,6 +8,7 @@ export const homeStrings = {
   byCategory: 'Gasto por categoría',
   byCategoryEmpty: 'Sin gastos confirmados este mes.',
   balances: 'Saldos',
+  upcoming: 'Próximos pagos',
   noAccounts: 'Aún no tienes cuentas',
   noAccountsHint: 'Créalas en la pestaña Cuentas.',
   uncategorized: 'Sin categoría',

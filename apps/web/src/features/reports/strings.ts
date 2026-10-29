@@ -1,0 +1,23 @@
+export const reportStrings = {
+  title: 'Reportes',
+  monthly: 'Resumen del mes',
+  income: 'Ingresos',
+  expenses: 'Gastos',
+  net: 'Neto',
+  expensesByCategory: 'Gastos por categoría',
+  incomeByCategory: 'Ingresos por categoría',
+  byAccount: 'Por cuenta',
+  account: 'Cuenta',
+  empty: 'Sin movimientos confirmados en este mes.',
+  uncategorized: 'Sin categoría',
+  trend: 'Tendencia',
+  months: 'meses',
+  month: 'Mes',
+  trendEmpty: 'Aún no hay datos para mostrar la tendencia.',
+  exportTitle: 'Exportar movimientos',
+  exportDescription:
+    'Archivo CSV (separado por punto y coma) que abre en Excel con tildes y montos correctos.',
+  from: 'Desde',
+  to: 'Hasta',
+  download: 'Descargar CSV',
+} as const;

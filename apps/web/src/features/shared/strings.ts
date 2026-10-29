@@ -1,4 +1,5 @@
 import type { IconKey } from '@bolsillo/core/categories';
+import type { RecurrenceFrequency } from '@bolsillo/core/recurring';
 import type {
   AccountType,
   TransactionSource,
@@ -91,3 +92,10 @@ export const commonStrings = {
   loadMore: 'Cargar más',
   actions: 'Acciones',
 } as const;
+
+export const frequencyLabels: Record<RecurrenceFrequency, string> = {
+  weekly: 'Semanal',
+  biweekly: 'Quincenal',
+  monthly: 'Mensual',
+  yearly: 'Anual',
+};

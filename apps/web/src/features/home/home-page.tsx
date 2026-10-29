@@ -1,54 +1,29 @@
 'use client';
 
-import { useAccounts, useMonthlyReport, useSettings } from '@bolsillo/api-client';
-import { formatMonth, getMonthRange, shiftMonthKey, toMonthKey } from '@bolsillo/core/dates';
+import { useAccounts, useMonthlyReport } from '@bolsillo/api-client';
 import type { Account, MonthlyReport } from '@bolsillo/core/schemas';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
 import { CategoryIcon } from '@/components/category-icon';
 import { Amount } from '@/components/money/amount';
+import { MonthSwitcher, useMonthState } from '@/components/month-switcher';
 import { EmptyState, ErrorState, LoadingState } from '@/components/states';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { UpcomingPayments } from '@/features/recurring/upcoming-payments';
 import { accountTypeLabels } from '@/features/shared/strings';
 import { homeStrings as t } from './strings';
 
 export function HomePage() {
-  const settings = useSettings();
-  const timezone = settings.data?.timezone;
-  const [month, setMonth] = useState<string | null>(null);
-  const currentMonth = month ?? (timezone ? toMonthKey(new Date(), timezone) : null);
+  const { month, timezone, setMonth } = useMonthState();
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">{t.title}</h1>
-        {currentMonth && timezone ? (
-          <div className="flex items-center gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t.previousMonth}
-              onClick={() => setMonth(shiftMonthKey(currentMonth, -1))}
-            >
-              <ChevronLeft />
-            </Button>
-            <span className="min-w-36 text-center font-medium" aria-live="polite">
-              {formatMonth(getMonthRange(currentMonth, timezone).start, { timeZone: timezone })}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon"
-              aria-label={t.nextMonth}
-              onClick={() => setMonth(shiftMonthKey(currentMonth, 1))}
-            >
-              <ChevronRight />
-            </Button>
-          </div>
-        ) : null}
+        <MonthSwitcher month={month} timezone={timezone} onChange={setMonth} />
       </div>
-      {currentMonth ? <MonthSummary month={currentMonth} /> : <LoadingState rows={3} />}
+      {month ? <MonthSummary month={month} /> : <LoadingState rows={3} />}
+      <UpcomingPayments limit={5} />
       <Balances />
     </div>
   );

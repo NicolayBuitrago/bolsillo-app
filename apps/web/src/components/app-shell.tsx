@@ -3,11 +3,15 @@
 import { useQueryClient } from '@bolsillo/api-client';
 import {
   ArrowLeftRight,
+  ChartColumn,
+  Ellipsis,
   House,
   ListOrdered,
   LogOut,
   type LucideIcon,
+  PiggyBank,
   Plus,
+  Repeat,
   Tags,
   Wallet,
 } from 'lucide-react';
@@ -25,11 +29,25 @@ interface NavItem {
   icon: LucideIcon;
 }
 
-const NAV: NavItem[] = [
+/** Sidebar (wide screens). */
+export const NAV: NavItem[] = [
   { href: '/', label: 'Inicio', icon: House },
   { href: '/transactions', label: 'Movimientos', icon: ListOrdered },
   { href: '/accounts', label: 'Cuentas', icon: Wallet },
+  { href: '/budgets', label: 'Presupuestos', icon: PiggyBank },
+  { href: '/recurring', label: 'Pagos recurrentes', icon: Repeat },
+  { href: '/reports', label: 'Reportes', icon: ChartColumn },
   { href: '/categories', label: 'Categorías', icon: Tags },
+];
+
+/** Bottom bar (narrow screens): the rest lives under "Más". */
+const BOTTOM_LEFT: NavItem[] = [
+  { href: '/', label: 'Inicio', icon: House },
+  { href: '/transactions', label: 'Movimientos', icon: ListOrdered },
+];
+const BOTTOM_RIGHT: NavItem[] = [
+  { href: '/accounts', label: 'Cuentas', icon: Wallet },
+  { href: '/more', label: 'Más', icon: Ellipsis },
 ];
 
 function isActive(pathname: string, href: string) {
@@ -108,7 +126,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         aria-label="Principal"
         className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-5 border-t bg-background md:hidden"
       >
-        {NAV.slice(0, 2).map((item) => (
+        {BOTTOM_LEFT.map((item) => (
           <BottomLink key={item.href} item={item} active={isActive(pathname, item.href)} />
         ))}
         <Link
@@ -120,7 +138,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Plus className="size-5" aria-hidden="true" />
           </span>
         </Link>
-        {NAV.slice(2).map((item) => (
+        {BOTTOM_RIGHT.map((item) => (
           <BottomLink key={item.href} item={item} active={isActive(pathname, item.href)} />
         ))}
       </nav>

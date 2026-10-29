@@ -108,7 +108,7 @@ Restricciones en la base (fase 1):
 - `check (amount_minor > 0)`, `check (account_id is not null or status = 'pending')` y `check ((transfer_group_id is not null) = (type in ('transfer_out', 'transfer_in')))`.
 - Único parcial `(transfer_group_id, type)` donde `transfer_group_id is not null`: como mucho una fila de cada lado por transferencia.
 - Llaves foráneas compuestas `(user_id, account_id) → financial_accounts (user_id, id)` y `(user_id, category_id) → categories (user_id, id)` (y `(user_id, parent_id)` en `categories`): la propia base impide enlazar datos de otro usuario.
-- `capture_id` y `recurring_payment_id` se agregan junto con sus tablas (fases 3 y 2).
+- `recurring_payment_id` existe desde la fase 2, con llave foránea compuesta `(user_id, recurring_payment_id)` y un único parcial `(recurring_payment_id, occurred_at)` donde `deleted_at is null`: el proceso diario no puede crear dos movimientos para el mismo vencimiento. `capture_id` llega con `raw_captures` (fase 3).
 
 ### `raw_captures`
 | Columna | Tipo | Notas |
@@ -166,10 +166,10 @@ Apps o remitentes que el usuario decidió escuchar.
 | category_id | uuid FK categories | incluye subcategorías al calcular |
 | amount_minor | bigint | > 0 |
 | currency | char(3) | |
-| starts_on | date | primer mes de vigencia |
+| starts_on | date | primer mes de vigencia; siempre el día 1 del mes |
 | archived_at | timestamptz null | |
 
-Único parcial: `(user_id, category_id)` donde `archived_at is null`. Periodo mensual fijo en el MVP.
+Único parcial: `(user_id, category_id)` donde `archived_at is null`. Periodo mensual fijo en el MVP. Solo categorías de gasto. Lo gastado solo cuenta movimientos en la moneda del presupuesto.
 
 ### `recurring_payments`
 | Columna | Tipo | Notas |
@@ -182,10 +182,15 @@ Apps o remitentes que el usuario decidió escuchar.
 | amount_minor | bigint null | null = monto variable |
 | currency | char(3) | |
 | frequency | recurrence_frequency | |
+| anchor_on | date | primer vencimiento; los siguientes conservan su día del mes (ver abajo) |
 | next_due_on | date | |
 | remind_days_before | int | default 2 |
 | auto_create | boolean | default false: crea un movimiento `pending` el día del vencimiento |
 | active | boolean | default true |
+
+Restricciones: `check (not auto_create or amount_minor is not null)` (no se puede crear automáticamente un movimiento sin monto) y `remind_days_before between 0 and 30`.
+
+Vencimientos (`packages/core/src/recurring`): semanal +7 días, quincenal +14 días, mensual y anual conservan el día de `anchor_on` y, si el mes no lo tiene, usan su último día. Un pago del 31 cae el 30 de noviembre, el 28 (o 29) de febrero y vuelve al 31 en marzo. Cambiar `next_due_on` o la frecuencia reinicia `anchor_on` en el nuevo vencimiento.
 
 ### `api_tokens`
 | Columna | Tipo | Notas |

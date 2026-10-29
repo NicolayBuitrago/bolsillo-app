@@ -76,6 +76,7 @@ Cada app tiene su `.env.example` con todas las variables documentadas.
 | `EMAIL_CAPTURE_DOMAIN` | dominio de direcciones de captura |
 | `DEDUP_WINDOW_MINUTES` | default 15 |
 | `LOG_LEVEL` | default `info` |
+| `JOBS_ENABLED` | default `true`; tareas programadas dentro de la API (pagos recurrentes) |
 
 ### `apps/web`
 | Variable | Descripción |

@@ -144,7 +144,9 @@ Notificación bancaria (Android)
 
 - **Diaria 06:00 America/Bogota**: crear movimientos `pending` para pagos recurrentes con `autoCreate` que vencen hoy y avanzar `nextDueOn`.
 - **Diaria 03:00**: purgar `body` y `title` de capturas procesadas con antigüedad mayor a `captureBodyRetentionDays`.
-- Implementación simple dentro del proceso de la API (por ejemplo `node-cron`), con protección para no ejecutarse dos veces si hay varias réplicas (lock con `pg_advisory_lock`).
+- Implementación dentro del proceso de la API con `node-cron` (`apps/api/src/jobs`), activada por `JOBS_ENABLED`. También corre una vez al arrancar, por si el servidor estaba apagado a la hora programada.
+- El proceso de recurrentes toma `pg_try_advisory_xact_lock` durante toda la ejecución (una segunda copia se omite), bloquea cada pago con `for update` y, en el mismo savepoint, crea el pendiente a las 12:00 locales del vencimiento y avanza `next_due_on`. Un único parcial en `transactions` impide duplicados. Los vencimientos atrasados se recuperan (máximo 12 por pago y ejecución). "Hoy" se calcula en la zona horaria de cada usuario.
+- **Recordatorios en el móvil**: notificaciones locales a las 9:00 del día de recordatorio, calculadas con `GET /v1/recurring/upcoming?days=30` y sincronizadas al abrir la app, al volver al frente o al cambiar un pago (se cancelan las que sobran y se programan las que faltan). Muestran el nombre y cuándo vence, nunca el monto, porque se ven en la pantalla bloqueada. Al cerrar sesión se cancelan.
 
 ## Despliegue
 

@@ -99,25 +99,25 @@ Reglas de movimientos: la categoría debe ser del mismo tipo que el movimiento (
 ### Presupuestos
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/v1/budgets` | |
-| POST / PATCH | `/v1/budgets`, `/v1/budgets/:id` | |
+| GET | `/v1/budgets` | `?includeArchived=true` |
+| POST / PATCH | `/v1/budgets`, `/v1/budgets/:id` | `{ categoryId, amountMinor, currency?, startsOn? }`: categoría de gasto activa (`422`), una activa por categoría (`409`); `startsOn` (por defecto el mes actual) se guarda como día 1. PATCH solo cambia monto y `startsOn` |
 | POST | `/v1/budgets/:id/archive` | |
-| GET | `/v1/budgets/summary?month=YYYY-MM` | por presupuesto: monto, gastado, restante, porcentaje |
+| GET | `/v1/budgets/summary?month=YYYY-MM` | por presupuesto vigente ese mes: monto, gastado (confirmados de la categoría y sus subcategorías, sin transferencias ni pendientes), restante (negativo si se pasó) y porcentaje entero (puede pasar de 100) |
 
 ### Pagos recurrentes
 | Método | Ruta | Descripción |
 |---|---|---|
-| GET | `/v1/recurring` | |
-| POST / PATCH | `/v1/recurring`, `/v1/recurring/:id` | |
-| GET | `/v1/recurring/upcoming?days=30` | próximos vencimientos (la app programa notificaciones locales con esto) |
-| POST | `/v1/recurring/:id/pay` | registra el pago (crea movimiento confirmado) y avanza `nextDueOn` |
+| GET | `/v1/recurring` | activos primero, por próximo vencimiento |
+| POST / PATCH | `/v1/recurring`, `/v1/recurring/:id` | POST `{ name, frequency, firstDueOn, amountMinor?, accountId?, categoryId?, currency?, remindDaysBefore?, autoCreate? }`. La moneda es la de la cuenta si hay. `autoCreate` exige monto (`400`/`422`). PATCH acepta `nextDueOn` y `active` (pausar); cambiar `nextDueOn` o la frecuencia reinicia el ancla |
+| GET | `/v1/recurring/upcoming?days=30` | vencimientos de los pagos activos desde su próximo vencimiento (incluye vencidos) hasta `days` días desde hoy (máx. 90), con `remindOn`. La app programa notificaciones locales con esto |
+| POST | `/v1/recurring/:id/pay` | `{ amountMinor?, accountId?, occurredAt? }` (monto obligatorio si es variable; cuenta obligatoria si el pago no tiene). Si el proceso diario ya creó el pendiente del vencimiento, lo confirma; si no, crea un gasto confirmado (`source = recurring`) y avanza `nextDueOn`. `422` si está pausado. Responde `{ recurringPayment, transaction }` |
 
 ### Reportes y exportación
 | Método | Ruta | Descripción |
 |---|---|---|
 | GET | `/v1/reports/monthly?month=YYYY-MM` | ingresos, gastos y neto por moneda; por categoría (agrupado en la categoría principal; `categoryId: null` = sin categoría); por cuenta. Mes en la zona del usuario. Existe desde la fase 1 porque lo usa Inicio |
-| GET | `/v1/reports/trend?months=6` | ingresos y gastos por mes |
-| GET | `/v1/export/transactions.csv?from&to` | CSV en UTF-8 con BOM (abre bien en Excel), separador `;` |
+| GET | `/v1/reports/trend?months=6` | ingresos, gastos y neto por mes local y moneda (1 a 24 meses, el actual al final; meses sin datos incluidos) |
+| GET | `/v1/export/transactions.csv?from&to` | CSV en UTF-8 con BOM (abre bien en Excel), separador `;`, fin de línea CRLF. Columnas: Fecha (hora local), Tipo, Estado, Cuenta, Categoría (`Padre / Hija`), Comercio, Nota, Monto, Moneda. Monto con signo y coma decimal sin separador de miles (`-45900`, `4200000,50`). Excluye borrados. Los textos que una hoja de cálculo tomaría como fórmula (`=`, `+`, `-`, `@`) se prefijan con `'` |
 
 ### Tokens de API
 | Método | Ruta | Descripción |
